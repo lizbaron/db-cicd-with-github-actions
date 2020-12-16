@@ -1,6 +1,7 @@
 # db-cicd-with-github-actions
 
 Demo code for "Level-Up Your CI/CD Game With k8s and GitHub to Avoid Database Disasters" session
+With gratitude this session heavily borrows from prior art created with Sreeja Pullagura (@sreejaptfa) and Andy Leonard (@aleonard763), found on the the Teach For America github repository here: https://github.com/teach-for-america/ssiscicd
 
 ## Setup AKS with Windows Node Pool
 - https://docs.microsoft.com/en-us/azure/aks/windows-container-cli
