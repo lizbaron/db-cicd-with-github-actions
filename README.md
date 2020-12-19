@@ -31,7 +31,7 @@ This is probably two separate pipelines: one to set up the environment, and one 
 - `$resourceGroupName`
 - `$region`
 - `$vaultName`
-- `$containerRegistryName`
+
 
 #### Create a Resource Group (https://docs.microsoft.com/en-us/powershell/module/az.resources/new-azresourcegroup?view=azps-5.2.0)
 ```
@@ -48,14 +48,30 @@ New-AzKeyVault -VaultName "$vaultName" -ResourceGroupName "$resourceGroupName" -
 $Secret = ConvertTo-SecureString -String 'Password' -AsPlainText -Force
 Set-AzKeyVaultSecret -VaultName 'Contoso' -Name 'ITSecret' -SecretValue $Secret
 ```
+- `$containerRegistryName`
+- `$aksClusterName`
+- `$aksPassword`  SecureString
+- `$aksWinUser`  SecureString
+- `$aksWinNodePoolName`  SecureString
+- `$resourceGroupName`
+- `$region`
+- `$vaultName`
 
-- kubernetesCluster: '$(kubernetesCluster)'
-- 'secret docker-registry regcred --docker-server=$(docker-server) --docker-username=$(docker-username) --docker-password=$(docker-password) --docker-email=$(docker-email)'
-- &az login --service-principal -u $(ssiscicdServicePrincipalURL) -p $(ssiscicdServicePrincipalPassword) --tenant $(ssiscicdTenantId)
-- &az aks get-credentials --resource-group $(azureResourceGroup) --name $(kubernetesCluster)
-- arguments: 'deployment mssqlssis-deployment --type=LoadBalancer --name=mssqlssis-service --port=$(port) --target-port=1433'
-- arguments: '$(podName)
-- "Data Source=$(ipAddress),$(port);User ID=sa;Password=$(saPassword);Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;Connect Timeout=60;Encrypt=False;TrustServerCertificate=True;Initial Catalog=$(projectName)\_UnitTests"
+Maybe
+- `$docker-server`
+- `$docker-username`
+- `$docker-password`
+- `$docker-email`
+- `$servicePrincipalURL`
+- `$servicePrincipalPassword`
+- `$ssiscicdTenantId`
+- `$deploymentName` k8s pod
+- `$serviceName` k8s
+- `$port` mssql external
+- `$targetPort` mmsql internal
+- `$podName`
+- `$ipAddress` fqdn
+- `$saPassword`
 
 #### Create ACR
 ```
@@ -71,22 +87,19 @@ New-AzContainerRegistry -ResourceGroupName "$resourceGroupName" -Name "$containe
 - https://docs.microsoft.com/en-us/virtualization/windowscontainers/manage-docker/manage-windows-dockerfile?context=/azure/aks/context/aks-context
 - https://docs.microsoft.com/en-us/virtualization/windowscontainers/manage-docker/optimize-windowInstall-AzAksKubectls-dockerfile?context=/azure/aks/context/aks-context
 ```
-$Password = Read-Host -Prompt 'Please enter your password' -AsSecureString
-New-AzAKS -ResourceGroupName myResourceGroup -Name myAKSCluster -NodeCount 1 -KubernetesVersion 1.16.7 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName akswinuser -WindowsProfileAdminUserPassword $Password
+New-AzAKS -ResourceGroupName "$resourceGroupName" -Name "$aksClusterName" -NodeCount 1 -KubernetesVersion 1.16.7 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword "$aksPassword"
 ```
 Add a Windows Server node pool
 ```
-New-AzAksNodePool -ResourceGroupName myResourceGroup -ClusterName myAKSCluster -OsType Windows -Name npwin -KubernetesVersion 1.16.7
+New-AzAksNodePool -ResourceGroupName "$resourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName" -KubernetesVersion 1.16.7
 ```
 Connect kubectl to the cluster
 ```
 Install-AzAksKubectl
-Import-AzAksCredential -ResourceGroupName myResourceGroup -Name myAKSCluster
+Import-AzAksCredential -ResourceGroupName "$resourceGroupName" -Name "$aksClusterName"
 ```
 Try out kubectl
 ```
 kubectl get nodes
 ```
-
-
 
