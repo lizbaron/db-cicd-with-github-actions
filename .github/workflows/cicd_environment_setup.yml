@@ -20,7 +20,7 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: Run setup script
-        run: posh $GITHUB_WORKSPACE/envSetup/setup.ps1
+        run: pwsh $GITHUB_WORKSPACE/envSetup/setup.ps1
 
 #      - name: Azure Login
 #        uses: Azure/login@v1.1
