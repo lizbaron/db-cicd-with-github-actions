@@ -4,6 +4,13 @@ name: CI/CD Environment Setup
 
 on:
   workflow_dispatch: 
+    inputs:
+    projectName:
+      description: 'Project Name'     
+      required: false
+      default: ${{ GITHUB_REPOSITORY }}
+    tags:
+      description: 'Test scenario tags'  
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
