@@ -34,13 +34,11 @@ jobs:
       # Documentation: https://github.com/marketplace/actions/azure-powershell-action
       - name: Run Azure PowerShell script
         uses: azure/powershell@v1
-        env:
-          PROJECT_NAME: ${{ github.event.inputs.projectName }}
         with:
           azPSVersion: '3.1.0'
           inlineScript: |
             $Parameters = @{
-              projectName = "$env:PROJECT_NAME";
+              projectName = "${{ github.event.inputs.logLevel }}";
             }; 
             ./envSetup/setup.ps1 @Parameters; 
 
