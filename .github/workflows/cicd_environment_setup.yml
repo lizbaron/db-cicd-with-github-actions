@@ -8,7 +8,7 @@ on:
       projectName:
         description: 'Project Name'     
         required: true
-        default: ${{ GITHUB_REPOSITORY }}
+        default: 'db-cicd-with-github-actions'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -36,7 +36,6 @@ jobs:
         uses: azure/powershell@v1
         with:
           inlineScript: |
-            $pwd
             ./envSetup/setup.ps1
           azPSVersion: '3.1.0'
 
