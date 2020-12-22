@@ -18,6 +18,8 @@ jobs:
     name: Setup Azure Environment
     runs-on: ubuntu-latest
 
+    env:
+      PROJECT_NAME: ${{ github.event.inputs.projectName }}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -35,15 +37,11 @@ jobs:
       # documentation: https://github.com/marketplace/actions/azure-powershell-action
       - name: run azure powershell script
         uses: azure/powershell@v1
-        env:
-          TESTVAR: ${{ github.event.inputs.projectName }}
         with:
           azpsversion: '3.1.0'
           inlinescript: |
             $parameters = @{
-              projectName = "$env:TESTVAR";
-              projectName2 = "{{ $env:TESTVAR }}";
-              projectName3 = "${{ github.event.inputs.projectName }}";
+              projectName = "$env:PROJECT_NAME";
             };
             $parameters; 
             #./envsetup/setup.ps1 @parameters; 
