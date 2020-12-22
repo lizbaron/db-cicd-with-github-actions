@@ -19,12 +19,15 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      TESTVAR: ${{ github.event.inputs.logLevel }}
+      TESTVAR: ${{ github.event.inputs.projectName }}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+
+      - name: input value test1
+        run: echo ${{ github.event.inputs.projectName }}
 
       - name: input value test2
         run: echo ${{ env.TESTVAR }}
@@ -44,7 +47,7 @@ jobs:
           azpsversion: '3.1.0'
           inlinescript: |
             $parameters = @{
-              projectname = "xx${{ github.event.inputs.loglevel }}";
+              projectname = "xx${{ github.event.inputs.projectName }}";
             }; 
             ./envsetup/setup.ps1 @parameters; 
 
