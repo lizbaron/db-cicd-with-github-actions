@@ -44,5 +44,5 @@ jobs:
               projectName = "$env:PROJECT_NAME";
             };
             $parameters; 
-            #./envsetup/setup.ps1 @parameters; 
+            ./envsetup/setup.ps1 @parameters; 
 
