@@ -18,13 +18,19 @@ jobs:
     name: Setup Azure Environment
     runs-on: ubuntu-latest
 
+    env:
+      TESTVAR: X42X
+
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      - name: input value test
-        run: pwsh "$projectName = '${{ github.event.inputs.logLevel }}'; $projectName"
+      - name: input value test1
+        run: echo ${{ github.event.inputs.logLevel }}
+
+      - name: input value test2
+        run: echo ${{ env.TESTVAR }}
 
       # documentation: https://github.com/azure/login#configure-azure-credentials
       # next steps is to set up a service principal in azure which has permission to set up its own resource group and resources within that resource group, but not mess with those that it has not set up.
