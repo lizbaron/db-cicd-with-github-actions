@@ -23,22 +23,25 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      # Documentation: https://github.com/Azure/login#configure-azure-credentials
-      # Next steps is to set up a service principal in Azure which has permission to set up its own resource group and resources within that resource group, but not mess with those that it has not set up.
-      - name: Login via Az module
+      - name: input value test
+        run: pwsh "$projectName = '${{ github.event.inputs.logLevel }}'; $projectName"
+
+      # documentation: https://github.com/azure/login#configure-azure-credentials
+      # next steps is to set up a service principal in azure which has permission to set up its own resource group and resources within that resource group, but not mess with those that it has not set up.
+      - name: login via az module
         uses: azure/login@v1
         with:
-          creds: ${{secrets.AZ_SP_CREDENTIALS}}
-          enable-AzPSSession: true 
+          creds: ${{secrets.az_sp_credentials}}
+          enable-azpssession: true 
 
-      # Documentation: https://github.com/marketplace/actions/azure-powershell-action
-      - name: Run Azure PowerShell script
+      # documentation: https://github.com/marketplace/actions/azure-powershell-action
+      - name: run azure powershell script
         uses: azure/powershell@v1
         with:
-          azPSVersion: '3.1.0'
-          inlineScript: |
-            $Parameters = @{
-              projectName = "${{ github.event.inputs.logLevel }}";
+          azpsversion: '3.1.0'
+          inlinescript: |
+            $parameters = @{
+              projectname = "xx${{ github.event.inputs.loglevel }}";
             }; 
-            ./envSetup/setup.ps1 @Parameters; 
+            ./envsetup/setup.ps1 @parameters; 
 
