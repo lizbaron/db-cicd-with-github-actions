@@ -51,7 +51,7 @@ if ($null -eq $smExists) {
 }
 
 # The Azure Key Vault RBAC is two separate levels, management and data. The Contributor role assigned above to the azure service principal as part of manualPrep.ps1 is for the management level. Additional permissions are required to manipulate the data level. (https://docs.microsoft.com/en-us/azure/key-vault/general/overview-security)
-Set-AzKeyVaultAccessPolicy -VaultName "$azSecretsManagerName" -ObjectId "azServicePrincipalObjectId" -PermissionsToSecrets Set
+Set-AzKeyVaultAccessPolicy -VaultName "$azSecretsManagerName" -ObjectId $azServicePrincipalObjectId -PermissionsToSecrets Set
 
 $aksPassword = ConvertTo-SecureString -String (Get-RandomCharacters -length 40 -characters 'abcdefghiklmnoprstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ') -AsPlainText -Force
 
