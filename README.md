@@ -18,10 +18,18 @@ With gratitude this session heavily borrows from prior art created with Sreeja P
 - Where are container images built?
 
 ### Required Resources
+
 - Key Management: Azure Key Vault, GCP Key Management Services, AWS Key Management Services
 - Container Registry: Azure Container Registry, GCP Container Registry, AWS Elastic Container Registry
 - Artifact Repository:
 - Pipeline orchestration: Jenkins, GCP CloudBuild, CircleCI, GitHub Actions
+
+When working in Azure, remember to register all service providers in your subscription before automating.
+```
+az provider register --namespace 'Microsoft.KeyVault' 
+az provider register --namespace 'Microsoft.ContainerRegistry' 
+az provider register --namespace 'Microsoft.Kubernetes' 
+```
 
 ## Azure
 This is probably two separate pipelines: one to set up the environment, and one to run the CI/CD pipelines.
@@ -44,6 +52,7 @@ New-AzKeyVault -VaultName "$vaultName" -ResourceGroupName "$resourceGroupName" -
 ```
 
 #### Add secrets to AKV (https://docs.microsoft.com/en-us/powershell/module/az.keyvault/set-azkeyvaultsecret?view=azps-5.2.0)
+You will need to ensure that the service principal you use to do this work has the correct permissions assigned to update the Key Vault data (not just the AKV resource itself).
 ```
 $Secret = ConvertTo-SecureString -String 'Password' -AsPlainText -Force
 Set-AzKeyVaultSecret -VaultName 'Contoso' -Name 'ITSecret' -SecretValue $Secret
