@@ -11,8 +11,8 @@ function Get-RandomCharacters($length, $characters) {
 
 #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
 
-$region = (Get-AzResourceGroup -Name $azResourceGroupName).Location
 $azResourceGroupName = "rg_" + $projectName;
+$region = (Get-AzResourceGroup -Name $azResourceGroupName).Location
 $azSecretsManagerName = "sm_" + $projectName;
 $aksClusterName = "aks_" + $projectName;
 $containerRegistryName = "crn_" + $projectName;
