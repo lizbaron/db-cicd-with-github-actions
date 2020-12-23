@@ -13,11 +13,11 @@ function Get-RandomCharacters($length, $characters) {
 
 $azResourceGroupName = "rg_" + $projectName;
 $region = (Get-AzResourceGroup -Name $azResourceGroupName).Location
-$azSecretsManagerName = "sm_" + $projectName;
-$aksClusterName = "aks_" + $projectName;
-$containerRegistryName = "crn_" + $projectName;
-$aksWinUser = "aksWinUser_" + (Get-RandomCharacters -length 10 -characters '1234567890')
-$aksWinNodePoolName = "aksWinNodePool_" + (Get-RandomCharacters -length 10 -characters '1234567890')
+$azSecretsManagerName = "sm-" + $projectName;
+$aksClusterName = "aks-" + $projectName;
+$containerRegistryName = "crn-" + $projectName;
+$aksWinUser = "aksWinUser-" + (Get-RandomCharacters -length 10 -characters '1234567890')
+$aksWinNodePoolName = "aksWinNodePool-" + (Get-RandomCharacters -length 10 -characters '1234567890')
 
 Write-Debug ("Project Name: {0}" -f "$projectName"); 
 Write-Debug ("Region: {0}" -f "$region"); 
