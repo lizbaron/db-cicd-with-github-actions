@@ -43,7 +43,7 @@ jobs:
           inlineScript: |
             $Parameters = @{
               projectName = "$env:PROJECT_NAME";
-              azServicePrincipalName = "$env:AZ_SERVICE_PRINCIPAL_NAME"
+              azServicePrincipalName = "$env:AZ_SERVICE_PRINCIPAL_NAME";
               debugOn = $true;
             }; 
             ./envSetup/setup.ps1 @Parameters; 
