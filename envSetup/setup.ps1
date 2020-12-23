@@ -31,7 +31,7 @@ $region = (Get-AzResourceGroup -Name $azResourceGroupName).Location
 $projectNameHash = (Get-MD5HashOfString($azSecretsManagerName)).Substring(0,10);
 $azSecretsManagerName = "sm-" + $projectNameHash;
 $aksClusterName = "aks-" + $projectNameHash;
-$containerRegistryName = "crn-" + $projectNameHash;
+$containerRegistryName = ("crn-" + $projectNameHash).Replace('-','');
 $aksWinUser = "aksWinUser-" + $projectNameHash;
 $aksWinNodePoolName = "aksWinNodePool-" + $projectNameHash;
 
