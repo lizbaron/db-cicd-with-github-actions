@@ -39,10 +39,8 @@ jobs:
         uses: azure/powershell@v1
         with:
           azpsversion: '3.1.0'
-          inlinescript: |
-            $parameters = @{
+          inlineScript: |
+            $Parameters = @{
               projectName = "$env:PROJECT_NAME";
-            };
-            $parameters; 
-            ./envsetup/setup.ps1 @parameters; 
-
+            }; 
+            ./envSetup/setup.ps1 @Parameters; 
