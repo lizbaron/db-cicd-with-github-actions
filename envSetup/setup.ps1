@@ -10,6 +10,16 @@ function Get-RandomCharacters($length, $characters) {
     return [String]$characters[$random]
 }
 
+function Get-MD5HashOfString($string) {
+    $stringAsStream = [System.IO.MemoryStream]::new();
+    $writer = [System.IO.StreamWriter]::new($stringAsStream);
+    $writer.write($string);
+    $writer.Flush();
+    $stringAsStream.Position = 0;
+    $hashedString = (Get-FileHash -InputStream $stringAsStream).Hash;
+    return [string]$hashedString;
+}
+
 #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
 if ($debugOn) {
     $DebugPreference = "Continue"
@@ -17,11 +27,12 @@ if ($debugOn) {
 
 $azResourceGroupName = "rg_" + $projectName;
 $region = (Get-AzResourceGroup -Name $azResourceGroupName).Location
-$azSecretsManagerName = "sm-" + $projectName;
-$aksClusterName = "aks-" + $projectName;
-$containerRegistryName = "crn-" + $projectName;
-$aksWinUser = "aksWinUser-" + (Get-RandomCharacters -length 10 -characters '1234567890')
-$aksWinNodePoolName = "aksWinNodePool-" + (Get-RandomCharacters -length 10 -characters '1234567890')
+$projectNameHash = (Get-MD5HashOfString($azSecretsManagerName)).Substring(0,10);
+$azSecretsManagerName = "sm-" + $projectNameHash;
+$aksClusterName = "aks-" + $projectNameHash;
+$containerRegistryName = "crn-" + $projectNameHash;
+$aksWinUser = "aksWinUser-" + $projectNameHash;
+$aksWinNodePoolName = "aksWinNodePool-" + $projectNameHash;
 
 Write-Debug ("Project Name: {0}" -f "$projectName"); 
 Write-Debug ("Region: {0}" -f "$region"); 
