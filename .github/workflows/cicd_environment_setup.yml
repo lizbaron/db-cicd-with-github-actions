@@ -20,7 +20,7 @@ jobs:
 
     env:
       PROJECT_NAME: ${{ github.event.inputs.projectName }}
-      AZ_SERVICE_PRINCIPAL_OBJECT_ID: ${{ secrets.AZ_SP_OBJECT_ID }}
+      AZ_SERVICE_PRINCIPAL_OBJECT_ID: ${{ secrets.AZ_SP_APP_ID }}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
