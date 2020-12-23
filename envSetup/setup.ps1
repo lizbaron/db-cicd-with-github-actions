@@ -56,14 +56,14 @@ Set-AzKeyVaultAccessPolicy -VaultName "$azSecretsManagerName" -ObjectId $azServi
 $aksPassword = ConvertTo-SecureString -String (Get-RandomCharacters -length 40 -characters 'abcdefghiklmnoprstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ') -AsPlainText -Force
 
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksPassword' -SecretValue $aksPassword;
-Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'projectName' -SecretValue $projectName;
-Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'region' -SecretValue $region;
-Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'azResourceGroupName' -SecretValue $azResourceGroupName;
-Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'azSecretsManagerName' -SecretValue $azSecretsManagerName;
-Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksClusterName' -SecretValue $aksClusterName;
-Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'containerRegistryName' -SecretValue $containerRegistryName;
-Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksWinUser' -SecretValue $aksWinUser;
-Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksWinNodePoolName' -SecretValue $aksWinNodePoolName;
+Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'projectName' -SecretValue (ConvertTo-SecureString -String $projectName -AsPlainText -Force);
+Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'region' -SecretValue (ConvertTo-SecureString -String $region -AsPlainText -Force);
+Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'azResourceGroupName' -SecretValue (ConvertTo-SecureString -String $azResourceGroupName -AsPlainText -Force);
+Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'azSecretsManagerName' -SecretValue (ConvertTo-SecureString -String $azSecretsManagerName -AsPlainText -Force);
+Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksClusterName' -SecretValue (ConvertTo-SecureString -String $aksClusterName -AsPlainText -Force);
+Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'containerRegistryName' -SecretValue (ConvertTo-SecureString -String $containerRegistryName -AsPlainText -Force);
+Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksWinUser' -SecretValue (ConvertTo-SecureString -String $aksWinUser -AsPlainText -Force);
+Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksWinNodePoolName' -SecretValue (ConvertTo-SecureString -String $aksWinNodePoolName -AsPlainText -Force);
 
 # Create a Container Registry
 New-AzContainerRegistry -ResourceGroupName "$azResourceGroupName" -Name "$containerRegistryName" -Sku "Basic"
