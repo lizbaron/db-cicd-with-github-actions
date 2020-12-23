@@ -20,7 +20,7 @@ jobs:
 
     env:
       PROJECT_NAME: ${{ github.event.inputs.projectName }}
-      AZ_SP_NAME: ${{ secrets.az_sp_name }}
+      AZ_SERVICE_PRINCIPAL_NAME: ${{ secrets.AZ_SP_NAME }}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -43,7 +43,7 @@ jobs:
           inlineScript: |
             $Parameters = @{
               projectName = "$env:PROJECT_NAME";
-              azServicePrincipalName = "$env:AZ_SP_NAME"
+              azServicePrincipalName = "$env:AZ_SERVICE_PRINCIPAL_NAME"
               debugOn = $true;
             }; 
             ./envSetup/setup.ps1 @Parameters; 
