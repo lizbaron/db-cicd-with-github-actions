@@ -42,5 +42,6 @@ jobs:
           inlineScript: |
             $Parameters = @{
               projectName = "$env:PROJECT_NAME";
+              debugOn = $true;
             }; 
             ./envSetup/setup.ps1 @Parameters; 

@@ -1,5 +1,6 @@
 Param( 
-    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $projectName
+    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $projectName,
+    [Parameter(Mandatory=$false)][Switch] $debugOn
 );
 
 # https://activedirectoryfaq.com/2017/08/creating-individual-random-passwords/
@@ -10,6 +11,9 @@ function Get-RandomCharacters($length, $characters) {
 }
 
 #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
+if ($debugOn) {
+    $DebugPreference = "Continue"
+}
 
 $azResourceGroupName = "rg_" + $projectName;
 $region = (Get-AzResourceGroup -Name $azResourceGroupName).Location
