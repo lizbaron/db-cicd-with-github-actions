@@ -44,13 +44,14 @@ Write-Debug ("Container Registry Name: {0}" -f "$containerRegistryName");
 Write-Debug ("AKS Win User Name: {0}" -f "$aksWinUser"); 
 Write-Debug ("AKS Win Node Pool Name: {0}" -f "$aksWinNodePoolName"); 
 
-# Set up Secrets Manager on Azure (AKV)
-New-AzKeyVault -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -Location "$region"
-
+# Set up Secrets Manager on Azure (AKV), if the Secrets Manager doesn't already exists
+$smExists = Get-AzKeyVault -VaultName "$azSecretsManagerName"
+if ($null -eq $smExists) {
+    New-AzKeyVault -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -Location "$region"
+}
 
 # The Azure Key Vault RBAC is two separate levels, management and data. The Contributor role assigned above to the azure service principal as part of manualPrep.ps1 is for the management level. Additional permissions are required to manipulate the data level. (https://docs.microsoft.com/en-us/azure/key-vault/general/overview-security)
 Set-AzKeyVaultAccessPolicy -VaultName "$azSecretsManagerName" -ServicePrincipalName "$azServicePrincipalName" -PermissionsToSecrets Set
-
 
 $aksPassword = ConvertTo-SecureString -String (Get-RandomCharacters -length 40 -characters 'abcdefghiklmnoprstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ') -AsPlainText -Force
 
