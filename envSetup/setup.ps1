@@ -59,7 +59,7 @@ $part1 = (Get-RandomCharacters -length 5 -characters 'abcdefghiklmnoprstuvwxyz')
 $part2 = (Get-RandomCharacters -length 5 -characters '1234567890');
 $part3 = (Get-RandomCharacters -length 10 -characters 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
 $part4 = (Get-RandomCharacters -length 2 -characters '!#$%^&*');
-$allParts = -join $part1,$part2,$part3,$part4;
+$allParts = -join ($part1,$part2,$part3,$part4);
 $aksPassword = ConvertTo-SecureString -String "$allParts" -AsPlainText -Force
 
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksPassword' -SecretValue $aksPassword;
