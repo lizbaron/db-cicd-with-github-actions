@@ -79,18 +79,7 @@ if ($null -eq $acrExists) {
 }
 
 # Create a new AKS Cluster with a single linux node
-$aksExists = $null;
-try {
-    $aksExists = Get-AzAksCluster -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName"; 
-} 
-#catch [Microsoft.Rest.Azure.CloudException] { <-- This is the inner exception when an AKS cluster is not found
-catch [System.Management.Automation.PSInvalidOperationException] { # <-- This is the outer exception when an AKS cluster is not found
-    Write-Debug "AKS does not exist"
-}
+New-AzAksCluster -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -GenerateSshKey -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword (ConvertTo-SecureString -String $aksPassword -AsPlainText -Force) -Force;
 
-if ($null -eq $aksExists) {
-    New-AzAksCluster -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword (ConvertTo-SecureString -String $aksPassword -AsPlainText -Force);
-
-    # Add a Windows Server node pool to our existing cluster
-    New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName"
-}
+# Add a Windows Server node pool to our existing cluster
+New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName"
