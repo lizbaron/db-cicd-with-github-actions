@@ -66,11 +66,21 @@ Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksWinUser' -Secr
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksWinNodePoolName' -SecretValue (ConvertTo-SecureString -String $aksWinNodePoolName -AsPlainText -Force);
 
 # Create a Container Registry
-New-AzContainerRegistry -ResourceGroupName "$azResourceGroupName" -Name "$containerRegistryName" -Sku "Basic"
+$acrExists = $null;
+try {
+    $acrExists = Get-AzContainerRegistry -ResourceGroupName "$azResourceGroupName" -Name "$containerRegistryName";
+}
+catch [Microsoft.Rest.Azure.CloudException] {
+    Write-Debug "ACR does not exist"
+}
+
+if ($null -eq $acrExists) {
+    New-AzContainerRegistry -ResourceGroupName "$azResourceGroupName" -Name "$containerRegistryName" -Sku "Basic"
+}
 
 # Create a new AKS Cluster with a single linux node
-New-AzAKS -ResourceGroupName "$resourceGroupName" -Name "$aksClusterName" -NodeCount 1 -KubernetesVersion 1.16.7 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword "$aksPassword"
+New-AzAKS -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -KubernetesVersion 1.16.7 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword "$aksPassword"
 
 # Add a Windows Server node pool to our existing cluster
-New-AzAksNodePool -ResourceGroupName "$resourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName" -KubernetesVersion 1.16.7
+New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName" -KubernetesVersion 1.16.7
 
