@@ -79,7 +79,13 @@ if ($null -eq $acrExists) {
 }
 
 # Create a new AKS Cluster with a single linux node
-$aksExists = Get-AzAksCluster -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName";
+$aksExists = $null;
+try {
+    $aksExists = Get-AzAksCluster -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName"; 
+} 
+catch [Microsoft.Rest.Azure.CloudException] {
+    Write-Debug "AKS does not exist"
+}
 
 if ($null -eq $aksExists) {
     New-AzAksCluster -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword (ConvertTo-SecureString -String $aksPassword -AsPlainText -Force);
