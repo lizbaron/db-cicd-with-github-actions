@@ -70,7 +70,7 @@ $acrExists = $null;
 try {
     $acrExists = Get-AzContainerRegistry -ResourceGroupName "$azResourceGroupName" -Name "$containerRegistryName";
 }
-catch [Microsoft.Rest.Azure.CloudException] {
+catch [Microsoft.Rest.Azure.CloudException] { # <-- This is the exception when the ACR is not found.
     Write-Debug "ACR does not exist"
 }
 
@@ -83,7 +83,8 @@ $aksExists = $null;
 try {
     $aksExists = Get-AzAksCluster -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName"; 
 } 
-catch [Microsoft.Rest.Azure.CloudException] {
+#catch [Microsoft.Rest.Azure.CloudException] { <-- This is the inner exception when an AKS cluster is not found
+catch [System.Management.Automation.PSInvalidOperationException] { # <-- This is the outer exception when an AKS cluster is not found
     Write-Debug "AKS does not exist"
 }
 
