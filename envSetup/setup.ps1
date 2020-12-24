@@ -70,7 +70,7 @@ $acrExists = $null;
 try {
     $acrExists = Get-AzContainerRegistry -ResourceGroupName "$azResourceGroupName" -Name "$containerRegistryName";
 }
-catch [Microsoft.Rest.Azure.CloudException] { # <-- This is the exception when the ACR is not found.
+catch [Microsoft.Rest.Azure.CloudException] { # <-- This is the exception when the ACR is not found. This is not true for all resources.
     Write-Debug "ACR does not exist"
 }
 
@@ -79,7 +79,7 @@ if ($null -eq $acrExists) {
 }
 
 # Create a new AKS Cluster with a single linux node
-New-AzAksCluster -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -GenerateSshKey -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword (ConvertTo-SecureString -String $aksPassword -AsPlainText -Force) -Force;
+New-AzAksCluster -Force -GenerateSshKey -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword (ConvertTo-SecureString -String $aksPassword -AsPlainText -Force);
 
 # Add a Windows Server node pool to our existing cluster
 New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName"
