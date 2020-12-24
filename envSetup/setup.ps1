@@ -55,13 +55,13 @@ Set-AzKeyVaultAccessPolicy -VaultName "$azSecretsManagerName" -ObjectId $azServi
 
 #^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%\^&\*\(\)])[a-zA-Z\d!@#$%\^&\*\(\)]***12,123***$
 # TODO: ENSURE ^^^ 
-$part1 = (Get-RandomCharacters -length 5 -characters 'abcdefghiklmnoprstuvwxyz');
-#$part2 = (Get-RandomCharacters -length 5 -characters '1234567890');
-$part3 = (Get-RandomCharacters -length 10 -characters 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
-$part4 = (Get-RandomCharacters -length 2 -characters '!#$%^&*');
-#$allParts = -join ($part1,$part2,$part3,$part4);
-$allParts = -join ($part1,$part3,$part4);
-$aksPassword = ConvertTo-SecureString -String "$allParts" -AsPlainText -Force
+# $part1 = (Get-RandomCharacters -length 5 -characters 'abcdefghiklmnoprstuvwxyz');
+# #$part2 = (Get-RandomCharacters -length 5 -characters '1234567890');
+# $part3 = (Get-RandomCharacters -length 10 -characters 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+# $part4 = (Get-RandomCharacters -length 2 -characters '!#$%^&*');
+# #$allParts = -join ($part1,$part2,$part3,$part4);
+# $allParts = -join ($part1,$part3,$part4);
+$aksPassword = ConvertTo-SecureString -String "This!sN0tMyp@ssword" -AsPlainText -Force
 
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksPassword' -SecretValue $aksPassword;
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'projectName' -SecretValue (ConvertTo-SecureString -String $projectName -AsPlainText -Force);
