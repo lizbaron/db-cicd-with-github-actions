@@ -33,7 +33,7 @@ $azSecretsManagerName = "sm-" + $projectNameHash;
 $aksClusterName = "aks-" + $projectNameHash;
 $containerRegistryName = ("crn-" + $projectNameHash).Replace('-','');
 $aksWinUser = "aksWinUser-" + $projectNameHash;
-$aksWinNodePoolName = "aksWinNodePool-" + $projectNameHash;
+$aksWinNodePoolName = "akswin"; #What can I name my Windows node pools? You have to keep the name to a maximum of 6 (six) characters. This is a current limitation of AKS. (https://docs.microsoft.com/en-us/azure/aks/windows-faq)
 
 Write-Debug ("Project Name: {0}" -f "$projectName"); 
 Write-Debug ("Region: {0}" -f "$region"); 
@@ -79,8 +79,11 @@ if ($null -eq $acrExists) {
 }
 
 # Create a new AKS Cluster with a single linux node
-New-AzAksCluster -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword "$aksPassword"
+$aksExists = Get-AzAksCluster -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName";
 
-# Add a Windows Server node pool to our existing cluster
-New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName"
+if ($null -eq $aksExists) {
+    New-AzAksCluster -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword (ConvertTo-SecureString -String $aksPassword -AsPlainText -Force);
 
+    # Add a Windows Server node pool to our existing cluster
+    New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName"
+}
