@@ -1,6 +1,7 @@
 Param( 
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $projectName,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $azServicePrincipalObjectId,
+    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $sshPassphrase,
     [Parameter(Mandatory=$false)][Switch] $debugOn
 );
 
@@ -91,7 +92,7 @@ if ($null -eq $acrExists) {
 Set-Item Env:\SuppressAzurePowerShellBreakingChangeWarnings "true"
 
 # Set up ssh key pair (https://docs.microsoft.com/en-us/azure/virtual-machines/linux/mac-create-ssh-keys)
-ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa
+ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa -N "$sshPassphrase"
 
 # Create a new AKS Cluster with a single linux node
 New-AzAksCluster -Force -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword;

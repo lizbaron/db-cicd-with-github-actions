@@ -21,6 +21,7 @@ jobs:
     env:
       PROJECT_NAME: ${{ github.event.inputs.projectName }}
       AZ_SERVICE_PRINCIPAL_OBJECT_ID: ${{ secrets.AZ_SP_OBJECT_ID }}
+      SSH_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -44,6 +45,7 @@ jobs:
             $Parameters = @{
               projectName = "$env:PROJECT_NAME";
               azServicePrincipalObjectId = "$env:AZ_SERVICE_PRINCIPAL_OBJECT_ID";
+              sshPassphrase = "$env:SSH_PASSPHRASE";
               debugOn = $true;
             }; 
             ./envSetup/setup.ps1 @Parameters; 
