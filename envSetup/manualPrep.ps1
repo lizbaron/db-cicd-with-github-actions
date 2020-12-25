@@ -17,10 +17,10 @@ az group list --query "[?name=='$azResourceGroupName'].{provisioningState: prope
 # Create the service principal.
 $spCredential = az ad sp create-for-rbac -n "$azServicePrincipalName" --sdk-auth --role contributor --scopes "/subscriptions/$azSubscriptionId/resourceGroups/$azResourceGroupName" 
 
-# Print the $spCredential (it's a json snippet, fyi) and save it in your secrets.
+# Print the $spCredential (it's a json snippet, fyi) and if using GitHub Actions save it as the AZ_SP_CREDENTIALS secret. (Settings > Secrets > "New repository secret")
 $spCredential;
 
-# Get the object id save it to your secrets.
+# Print the object id and if using GitHub Actions save it as the AZ_SP_OBJECT_ID secret. (Settings > Secrets > "New repository secret")
 az ad sp list --query "[?appDisplayName=='$azServicePrincipalName'].{objectId: objectId}" -o table
 
 # Register required services

@@ -54,10 +54,10 @@ if ($null -eq $smExists) {
 }
 
 # The Azure Key Vault RBAC is two separate levels, management and data. The Contributor role assigned above to the azure service principal as part of manualPrep.ps1 is for the management level. Additional permissions are required to manipulate the data level. (https://docs.microsoft.com/en-us/azure/key-vault/general/overview-security)
-Set-AzKeyVaultAccessPolicy -VaultName "$azSecretsManagerName" -ObjectId $azServicePrincipalObjectId -PermissionsToSecrets Set
+Set-AzKeyVaultAccessPolicy -VaultName "$azSecretsManagerName" -ObjectId $azServicePrincipalObjectId -PermissionsToSecrets Get,Set
 
 #^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%\^&\*\(\)])[a-zA-Z\d!@#$%\^&\*\(\)]***12,123***$
-# TODO: ENSURE ^^^ 
+# @SM --> TODO: ENSURE ^^^ 
 $part1 = (Get-RandomCharacters -length 5 -characters 'abcdefghiklmnoprstuvwxyz');
 $part2 = (Get-RandomCharacters -length 5 -characters '1234567890');
 $part3 = (Get-RandomCharacters -length 10 -characters 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
@@ -95,7 +95,9 @@ Set-Item Env:\SuppressAzurePowerShellBreakingChangeWarnings "true"
 ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa -N "$sshPassphrase"
 
 # Create a new AKS Cluster with a single linux node
+# @SM --> TODO: This might not be possible because of an Azure Powershell bug, https://github.com/Azure/azure-powershell/issues/13012
 New-AzAksCluster -Force -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword;
 
 # Add a Windows Server node pool to our existing cluster
+# @SM --> TODO: Azure free trial account vCPU region limits do not allow for the deployment of a second AKS node. As of right now, it is not possible to request an increase in vCPU region limits for free accounts.
 New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName"
