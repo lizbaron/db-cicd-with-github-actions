@@ -32,7 +32,7 @@ $projectNameHash = (Get-MD5HashOfString($azSecretsManagerName)).Substring(0,10);
 $azSecretsManagerName = "sm-" + $projectNameHash;
 $aksClusterName = "aks-" + $projectNameHash;
 $containerRegistryName = ("crn-" + $projectNameHash).Replace('-','');
-$aksWinUser = "aksWinUser-" + $projectNameHash;
+$aksWinUser = ("aksWinUser-" + $projectNameHash).Replace('-','');
 $aksWinNodePoolName = "akswin"; #What can I name my Windows node pools? You have to keep the name to a maximum of 6 (six) characters. This is a current limitation of AKS. (https://docs.microsoft.com/en-us/azure/aks/windows-faq)
 
 Write-Debug ("Project Name: {0}" -f "$projectName"); 
@@ -55,13 +55,12 @@ Set-AzKeyVaultAccessPolicy -VaultName "$azSecretsManagerName" -ObjectId $azServi
 
 #^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%\^&\*\(\)])[a-zA-Z\d!@#$%\^&\*\(\)]***12,123***$
 # TODO: ENSURE ^^^ 
-# $part1 = (Get-RandomCharacters -length 5 -characters 'abcdefghiklmnoprstuvwxyz');
-# #$part2 = (Get-RandomCharacters -length 5 -characters '1234567890');
-# $part3 = (Get-RandomCharacters -length 10 -characters 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
-# $part4 = (Get-RandomCharacters -length 2 -characters '!#$%^&*');
-# #$allParts = -join ($part1,$part2,$part3,$part4);
-# $allParts = -join ($part1,$part3,$part4);
-$aksPassword = ConvertTo-SecureString -String "This!sN0tMyp@ssword" -AsPlainText -Force
+$part1 = (Get-RandomCharacters -length 5 -characters 'abcdefghiklmnoprstuvwxyz');
+$part2 = (Get-RandomCharacters -length 5 -characters '1234567890');
+$part3 = (Get-RandomCharacters -length 10 -characters 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+$part4 = (Get-RandomCharacters -length 2 -characters '!#$%^&*');
+$allParts = -join ($part1,$part2,$part3,$part4);
+$aksPassword = ConvertTo-SecureString -String "$allParts" -AsPlainText -Force
 
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksPassword' -SecretValue $aksPassword;
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'projectName' -SecretValue (ConvertTo-SecureString -String $projectName -AsPlainText -Force);
@@ -86,8 +85,11 @@ if ($null -eq $acrExists) {
     New-AzContainerRegistry -ResourceGroupName "$azResourceGroupName" -Name "$containerRegistryName" -Sku "Basic"
 }
 
+# Suppress irritating warnings about breaking changes in New-AzAksCluster, "WARNING: Upcoming breaking changes in the cmdlet 'New-AzAksCluster' :The cmdlet 'New-AzAksCluster' is replacing this cmdlet. - The parameter : 'NodeVmSetType' is changing. - Change description : Default value will be changed from AvailabilitySet to VirtualMachineScaleSets. - The parameter : 'NetworkPlugin' is changing. - Change description : Default value will be changed from None to azure."
+Set-Item Env:\SuppressAzurePowerShellBreakingChangeWarnings "true"
+
 # Create a new AKS Cluster with a single linux node
-New-AzAksCluster -Force -GenerateSshKey -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword;
+New-AzAksCluster -Force -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword;
 
 # Add a Windows Server node pool to our existing cluster
 New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName"
