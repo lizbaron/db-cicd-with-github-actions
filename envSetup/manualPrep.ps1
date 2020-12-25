@@ -5,9 +5,16 @@ $projectName = "db-cicd-with-github-actions"
 $azResourceGroupName = "rg_" + $projectName
 $azServicePrincipalName = "sp_" + $projectName
 
-$rgDetails = az group create -l $region -n $azResourceGroupName
-# Pro Tip: Make sure that Provisioning State is Suceeded.
+# Create the resource group
+az group create -l $region -n $azResourceGroupName
 
+# Ensure the resource group Provisioning State is Suceeded. For example:
+# ProvisioningState
+# -------------------
+# Succeeded
+az group list --query "[?name=='$azResourceGroupName'].{provisioningState: properties.provisioningState}" -o table
+
+# Create the service principal.
 $spCredential = az ad sp create-for-rbac -n "$azServicePrincipalName" --sdk-auth --role contributor --scopes "/subscriptions/$azSubscriptionId/resourceGroups/$azResourceGroupName" 
 
 # Print the $spCredential (it's a json snippet, fyi) and save it in your secrets.

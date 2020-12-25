@@ -35,6 +35,7 @@ $containerRegistryName = ("crn-" + $projectNameHash).Replace('-','');
 $aksWinUser = ("aksWinUser-" + $projectNameHash).Replace('-','');
 $aksWinNodePoolName = "akswin"; #What can I name my Windows node pools? You have to keep the name to a maximum of 6 (six) characters. This is a current limitation of AKS. (https://docs.microsoft.com/en-us/azure/aks/windows-faq)
 
+Write-Debug ("*-*-*-*-*-*- Set Up Variables -*-*-*-*-*-*"); 
 Write-Debug ("Project Name: {0}" -f "$projectName"); 
 Write-Debug ("Region: {0}" -f "$region"); 
 Write-Debug ("Resource Group Name: {0}" -f "$azResourceGroupName"); 
@@ -43,6 +44,7 @@ Write-Debug ("AKS Cluster Name: {0}" -f "$aksClusterName");
 Write-Debug ("Container Registry Name: {0}" -f "$containerRegistryName"); 
 Write-Debug ("AKS Win User Name: {0}" -f "$aksWinUser"); 
 Write-Debug ("AKS Win Node Pool Name: {0}" -f "$aksWinNodePoolName"); 
+Write-Debug ("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*"); 
 
 # Set up Secrets Manager on Azure (AKV), if the Secrets Manager doesn't already exists
 $smExists = Get-AzKeyVault -VaultName "$azSecretsManagerName"
