@@ -89,7 +89,7 @@ Set-Item Env:\SuppressAzurePowerShellBreakingChangeWarnings "true"
 $azServicePrincipalCreds = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "$azServicePrincipalObjectId",$azServicePrincipalClientSecret
 
 # Set up ssh key pair (https://docs.microsoft.com/en-us/azure/virtual-machines/linux/mac-create-ssh-keys)
-ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa -N "$sshPassphrase"
+# ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa -N "$sshPassphrase"
 
 # Create "~/.azure/acsServicePrincipal.json" as {"$azSubscriptionId":{"service_principal":"$azServicePrincipalObjectId","client_secret":"$azServicePrincipalClientSecret"}}
 Set-Content -Path ~/.azure/acsServicePrincipal.json -Value '{"$azSubscriptionId":{"service_principal":"$azServicePrincipalObjectId","client_secret":"$azServicePrincipalClientSecret"}}'
