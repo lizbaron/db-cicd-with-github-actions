@@ -9,34 +9,47 @@ $azServicePrincipalName = "sp_" + $projectName
 az group create -l $region -n $azResourceGroupName
 
 # Ensure the resource group Provisioning State is Suceeded. For example:
-# ProvisioningState
-# -------------------
-# Succeeded
-# TODO: Wait until Succeeded is returned or time limit is reached.
-az group list --query "[?name=='$azResourceGroupName'].{provisioningState: properties.provisioningState}" -o table
+$sleepInterval = 10;
+$waitTimeLimit = 0;
+while ("Succeeded" -ne (az group list --query "[?name=='$azResourceGroupName'].{provisioningState: properties.provisioningState}" -o tsv) -AND $waitTimeLimit -le 60) {
+    Start-Sleep $sleepInterval;
+    $waitTimeLimit += $sleepInterval;
+}
 
 # Create the service principal.
 $spCredential = az ad sp create-for-rbac -n "$azServicePrincipalName" --sdk-auth --role contributor --scopes "/subscriptions/$azSubscriptionId/resourceGroups/$azResourceGroupName" 
 
-# TODO: Print out the instructions
-# Print the $spCredential (it's a json snippet, fyi) and if using GitHub Actions save it as the AZ_SP_CREDENTIALS secret. (Settings > Secrets > "New repository secret")
 $spCredential;
+Write-Output "";
+Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   INSTRUCTIONS  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
+Write-Output "💖";
+Write-Output "💖   Copy the json snippet above and save it as the GitHub Secret `"AZ_SP_CREDENTIALS`"."; 
+Write-Output "💖";
+Write-Output "💖   Copy the client secret from the json snippet save it as the GitHub Secret `"AZ_SP_CLIENT_SECRET`"."; 
+Write-Output "💖";
+Write-Output "💖   GitHub secrets can be set by going to Settings > Secrets > `"New repository secret`".";
+Write-Output "💖";
+Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
 
-# TODO: Print out the instructions
-# Print the object id and if using GitHub Actions save it as the AZ_SP_OBJECT_ID secret. (Settings > Secrets > "New repository secret")
 az ad sp list --query "[?appDisplayName=='$azServicePrincipalName'].{objectId: objectId}" -o table
+Write-Output "";
+Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   INSTRUCTIONS  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
+Write-Output "💖";
+Write-Output "💖   Copy the object id and save it as the GitHub Secret `"AZ_SP_OBJECT_ID`".";
+Write-Output "💖";
+Write-Output "💖   GitHub secrets can be set by going to Settings > Secrets > `"New repository secret`".";
+Write-Output "💖"; 
+Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
 
 # Register required services
 az provider register --namespace 'Microsoft.KeyVault' 
 az provider register --namespace 'Microsoft.ContainerRegistry' 
 az provider register --namespace 'Microsoft.Kubernetes' 
 
-# Ensure all required services are registered. For example:
-# Namespace                    RegistrationState
-# ---------------------------  -------------------
-# Microsoft.KeyVault           Registered
-# Microsoft.Kubernetes         Registered
-# Microsoft.ContainerRegistry  Registered
-# TODO: Wait until all are Registered or time limit is reached.
-az provider list --query "[?contains('Microsoft.KeyVault|Microsoft.Kubernetes|Microsoft.ContainerRegistry',namespace)].{namespace: namespace, registrationState: registrationState}" -o table
+# Wait until all required services are registered.
+$waitTimeLimit = 0;
+while ((-join (az provider list --query "[?contains('Microsoft.KeyVault|Microsoft.Kubernetes|Microsoft.ContainerRegistry',namespace)].{registrationState: registrationState}" -o tsv)).Replace("Registered","").length -gt 0 -AND $waitTimeLimit -le 300) {
+    Start-Sleep $sleepInterval;
+    $waitTimeLimit += $sleepInterval;
+}
 

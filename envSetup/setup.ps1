@@ -1,6 +1,7 @@
 Param( 
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $projectName,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $azServicePrincipalObjectId,
+    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][Security.SecureString]$azServicePrincipalClientSecret,
     [Parameter(Mandatory=$false)][Switch] $debugOn
 );
 
@@ -46,12 +47,8 @@ Write-Debug ("AKS Win User Name: {0}" -f "$aksWinUser");
 Write-Debug ("AKS Win Node Pool Name: {0}" -f "$aksWinNodePoolName"); 
 Write-Debug ("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*"); 
 
-# Set up Secrets Manager on Azure (AKV), if the Secrets Manager doesn't already exists
-# TODO: Delete roundtrip and instead just try to create the AKV, but try/catch error for that instead of the Get.
-$smExists = Get-AzKeyVault -VaultName "$azSecretsManagerName"
-if ($null -eq $smExists) {
-    New-AzKeyVault -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -Location "$region"
-}
+# Set up Secrets Manager on Azure (AKV). If the AKV exists, throws a non-terminating error.
+New-AzKeyVault -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -Location "$region"
 
 # The Azure Key Vault RBAC is two separate levels, management and data. The Contributor role assigned above to the azure service principal as part of manualPrep.ps1 is for the management level. Additional permissions are required to manipulate the data level. (https://docs.microsoft.com/en-us/azure/key-vault/general/overview-security)
 Set-AzKeyVaultAccessPolicy -VaultName "$azSecretsManagerName" -ObjectId $azServicePrincipalObjectId -PermissionsToSecrets Get,Set
@@ -74,26 +71,18 @@ Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'containerRegistry
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksWinUser' -SecretValue (ConvertTo-SecureString -String $aksWinUser -AsPlainText -Force);
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksWinNodePoolName' -SecretValue (ConvertTo-SecureString -String $aksWinNodePoolName -AsPlainText -Force);
 
-# Create a Container Registry
-# TODO: Delete roundtrip and instead just try to create the ACR, but try/catch error for that instead of the Get.
-$acrExists = $null;
-try {## Why?
-    $acrExists = Get-AzContainerRegistry -ResourceGroupName "$azResourceGroupName" -Name "$containerRegistryName";
-}
-catch [Microsoft.Rest.Azure.CloudException] { # <-- This is the exception when the ACR is not found. This is not true for all resources.
-    Write-Debug "ACR does not exist"
-}
-
-if ($null -eq $acrExists) {
-    New-AzContainerRegistry -ResourceGroupName "$azResourceGroupName" -Name "$containerRegistryName" -Sku "Basic"
-}
+# Create a Container Registry. If the ACR exists, throws a non-terminating error.
+New-AzContainerRegistry -ResourceGroupName "$azResourceGroupName" -Name "$containerRegistryName" -Sku "Basic"
 
 # Suppress irritating warnings about breaking changes in New-AzAksCluster, "WARNING: Upcoming breaking changes in the cmdlet 'New-AzAksCluster' :The cmdlet 'New-AzAksCluster' is replacing this cmdlet. - The parameter : 'NodeVmSetType' is changing. - Change description : Default value will be changed from AvailabilitySet to VirtualMachineScaleSets. - The parameter : 'NetworkPlugin' is changing. - Change description : Default value will be changed from None to azure."
 Set-Item Env:\SuppressAzurePowerShellBreakingChangeWarnings "true"
 
+
+$azServicePrincipalCreds = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "$azServicePrincipalObjectId","$azServicePrincipalClientSecret"
+
 # Create a new AKS Cluster with a single linux node
-# TODO: Figure out if we can create a .json file for the service principal a la https://github.com/Azure/azure-powershell/issues/13012 
-New-AzAksCluster -Force -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword;
+# TODO: Figure out if we can create a .json file for the service principal a la https://github.com/Azu re/azure-powershell/issues/13012 
+New-AzAksCluster -Force -ServicePrincipalIdAndSecret $azServicePrincipalCreds -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword;
 
 # Add a Windows Server node pool to our existing cluster
 # @SM --> TODO: Azure free trial account vCPU region limits do not allow for the deployment of a second AKS node. As of right now, it is not possible to request an increase in vCPU region limits for free accounts.
