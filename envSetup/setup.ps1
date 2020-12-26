@@ -48,6 +48,7 @@ Write-Debug ("AKS Win Node Pool Name: {0}" -f "$aksWinNodePoolName");
 Write-Debug ("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*"); 
 
 # Set up Secrets Manager on Azure (AKV). If the AKV exists, throws a non-terminating error.
+# @SM --> TODO: This fails miserably if there exists a AKV soft-deleted in the same region with the same name. I don't see a way to turn off soft-delete
 New-AzKeyVault -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -Location "$region"
 
 # The Azure Key Vault RBAC is two separate levels, management and data. The Contributor role assigned above to the azure service principal as part of manualPrep.ps1 is for the management level. Additional permissions are required to manipulate the data level. (https://docs.microsoft.com/en-us/azure/key-vault/general/overview-security)
@@ -78,7 +79,7 @@ New-AzContainerRegistry -ResourceGroupName "$azResourceGroupName" -Name "$contai
 Set-Item Env:\SuppressAzurePowerShellBreakingChangeWarnings "true"
 
 
-$azServicePrincipalCreds = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "$azServicePrincipalObjectId","$azServicePrincipalClientSecret"
+$azServicePrincipalCreds = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "$azServicePrincipalObjectId",$azServicePrincipalClientSecret
 
 # Create a new AKS Cluster with a single linux node
 # TODO: Figure out if we can create a .json file for the service principal a la https://github.com/Azu re/azure-powershell/issues/13012 
