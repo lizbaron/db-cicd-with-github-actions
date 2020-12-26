@@ -45,6 +45,7 @@ jobs:
         uses: azure/powershell@v1
         with:
           azpsversion: 'latest'
+          errorActionPreference: 'continue'
           inlineScript: |
             $Parameters = @{
               projectName = "$env:PROJECT_NAME";
