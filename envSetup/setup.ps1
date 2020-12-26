@@ -97,6 +97,7 @@ Set-Content -Path ~/.azure/acsServicePrincipal.json -Value '{"$azSubscriptionId"
 Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 Write-Debug "Directory Listing"; 
 ls -la ~/.azure/acsServicePrincipal*
+Get-Content -Path ~/.azure/acsServicePrincipal.json
 Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
 # Create a new AKS Cluster with a single linux node
