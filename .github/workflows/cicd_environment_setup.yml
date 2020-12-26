@@ -24,6 +24,7 @@ jobs:
 
     env:
       PROJECT_NAME: ${{ github.event.inputs.projectName }}
+      AZ_SUBSCRIPTION_ID: ${{ secrets.AZ_SUBSCRIPTION_ID }}
       AZ_SERVICE_PRINCIPAL_OBJECT_ID: ${{ secrets.AZ_SP_OBJECT_ID }}
       AZ_SERVICE_PRINCIPAL_CLIENT_SECRET: ${{ secrets.AZ_SP_CLIENT_SECRET }}
       SSH_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
@@ -52,6 +53,7 @@ jobs:
               projectName = "$env:PROJECT_NAME";
               azServicePrincipalObjectId = "$env:AZ_SERVICE_PRINCIPAL_OBJECT_ID";
               azServicePrincipalClientSecret = (ConvertTo-SecureString -String "$env:AZ_SERVICE_PRINCIPAL_CLIENT_SECRET" -AsPlainText -Force);
+              azSubscriptionId = "$env:AZ_SUBSCRIPTION_ID";
               sshPassphrase = "$env:SSH_PASSPHRASE";
               debugOn = $true;
             }; 
