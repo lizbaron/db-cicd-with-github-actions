@@ -92,7 +92,7 @@ $azServicePrincipalCreds = New-Object -TypeName System.Management.Automation.PSC
 ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa -N "$sshPassphrase"
 
 # Create "~/.azure/acsServicePrincipal.json" as {"$azSubscriptionId":{"service_principal":"$azServicePrincipalObjectId","client_secret":"$azServicePrincipalClientSecret"}}
-Set-Content -Path ~/.azure/acsServicePrincipal.json -Value '{"$azSubscriptionId":{"service_principal":"$azServicePrincipalObjectId","client_secret":"(ConvertFrom-SecureString -SecureString $azServicePrincipalClientSecret -AsPlainText)"}}'
+Set-Content -Path ~/.azure/acsServicePrincipal.json -Value ('{"', $azSubscriptionId, '":{"service_principal":"', $azServicePrincipalObjectId, '","client_secret":"', (ConvertFrom-SecureString -SecureString $azServicePrincipalClientSecret -AsPlainText), '"}}' -join "")
 
 Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 Write-Debug "Directory Listing"; 
