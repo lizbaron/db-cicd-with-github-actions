@@ -49,7 +49,7 @@ jobs:
             $Parameters = @{
               projectName = "$env:PROJECT_NAME";
               azServicePrincipalObjectId = "$env:AZ_SERVICE_PRINCIPAL_OBJECT_ID";
-              sshPassphrase = (ConvertTo-SecureString -String "$env:AZ_SERVICE_PRINCIPAL_CLIENT_SECRET" -AsPlainText -Force);
+              azServicePrincipalClientSecret = (ConvertTo-SecureString -String "$env:AZ_SERVICE_PRINCIPAL_CLIENT_SECRET" -AsPlainText -Force);
               debugOn = $true;
             }; 
             ./envSetup/setup.ps1 @Parameters; 
