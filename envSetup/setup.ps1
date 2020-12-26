@@ -1,7 +1,6 @@
 Param( 
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $projectName,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $azServicePrincipalObjectId,
-    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $sshPassphrase,
     [Parameter(Mandatory=$false)][Switch] $debugOn
 );
 
@@ -48,6 +47,7 @@ Write-Debug ("AKS Win Node Pool Name: {0}" -f "$aksWinNodePoolName");
 Write-Debug ("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*"); 
 
 # Set up Secrets Manager on Azure (AKV), if the Secrets Manager doesn't already exists
+# TODO: Delete roundtrip and instead just try to create the AKV, but try/catch error for that instead of the Get.
 $smExists = Get-AzKeyVault -VaultName "$azSecretsManagerName"
 if ($null -eq $smExists) {
     New-AzKeyVault -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -Location "$region"
@@ -56,13 +56,12 @@ if ($null -eq $smExists) {
 # The Azure Key Vault RBAC is two separate levels, management and data. The Contributor role assigned above to the azure service principal as part of manualPrep.ps1 is for the management level. Additional permissions are required to manipulate the data level. (https://docs.microsoft.com/en-us/azure/key-vault/general/overview-security)
 Set-AzKeyVaultAccessPolicy -VaultName "$azSecretsManagerName" -ObjectId $azServicePrincipalObjectId -PermissionsToSecrets Get,Set
 
-#^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%\^&\*\(\)])[a-zA-Z\d!@#$%\^&\*\(\)]***12,123***$
-# @SM --> TODO: ENSURE ^^^ 
-$part1 = (Get-RandomCharacters -length 5 -characters 'abcdefghiklmnoprstuvwxyz');
-$part2 = (Get-RandomCharacters -length 5 -characters '1234567890');
+# ^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%\^&\*\(\)])[a-zA-Z\d!@#$%\^&\*\(\)]***12,123***$
+$part1 = (Get-RandomCharacters -length 10 -characters 'abcdefghiklmnoprstuvwxyz');
+$part2 = (Get-RandomCharacters -length 10 -characters '1234567890');
 $part3 = (Get-RandomCharacters -length 10 -characters 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
-$part4 = (Get-RandomCharacters -length 2 -characters '!#$%^&*');
-$allParts = -join ($part1,$part2,$part3,$part4);
+$part4 = (Get-RandomCharacters -length 10 -characters '!#$%^&*');
+$allParts = -join ((-join ($part1,$part2,$part3,$part4)).ToCharArray() | Get-Random -Shuffle)
 $aksPassword = ConvertTo-SecureString -String "$allParts" -AsPlainText -Force
 
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksPassword' -SecretValue $aksPassword;
@@ -76,8 +75,9 @@ Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksWinUser' -Secr
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksWinNodePoolName' -SecretValue (ConvertTo-SecureString -String $aksWinNodePoolName -AsPlainText -Force);
 
 # Create a Container Registry
+# TODO: Delete roundtrip and instead just try to create the ACR, but try/catch error for that instead of the Get.
 $acrExists = $null;
-try {
+try {## Why?
     $acrExists = Get-AzContainerRegistry -ResourceGroupName "$azResourceGroupName" -Name "$containerRegistryName";
 }
 catch [Microsoft.Rest.Azure.CloudException] { # <-- This is the exception when the ACR is not found. This is not true for all resources.
@@ -91,11 +91,8 @@ if ($null -eq $acrExists) {
 # Suppress irritating warnings about breaking changes in New-AzAksCluster, "WARNING: Upcoming breaking changes in the cmdlet 'New-AzAksCluster' :The cmdlet 'New-AzAksCluster' is replacing this cmdlet. - The parameter : 'NodeVmSetType' is changing. - Change description : Default value will be changed from AvailabilitySet to VirtualMachineScaleSets. - The parameter : 'NetworkPlugin' is changing. - Change description : Default value will be changed from None to azure."
 Set-Item Env:\SuppressAzurePowerShellBreakingChangeWarnings "true"
 
-# Set up ssh key pair (https://docs.microsoft.com/en-us/azure/virtual-machines/linux/mac-create-ssh-keys)
-ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa -N "$sshPassphrase"
-
 # Create a new AKS Cluster with a single linux node
-# @SM --> TODO: This might not be possible because of an Azure Powershell bug, https://github.com/Azure/azure-powershell/issues/13012
+# TODO: Figure out if we can create a .json file for the service principal a la https://github.com/Azure/azure-powershell/issues/13012 
 New-AzAksCluster -Force -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword;
 
 # Add a Windows Server node pool to our existing cluster
