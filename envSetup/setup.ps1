@@ -56,8 +56,9 @@ Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
 # Parse service principal credentials to extract the subscription id and client secret.
 $convertedCredentials = (ConvertFrom-Json $azServicePrincipalCredentials)
-$azSubscriptionId = $convertedCredentials.subscriptionId
-$azServicePrincipalClientSecret = $convertedCredentials.clientSecret
+$azServicePrincipalClientId = $convertedCredentials.clientId;
+$azSubscriptionId = $convertedCredentials.subscriptionId;
+$azServicePrincipalClientSecret = $convertedCredentials.clientSecret;
 
 # Set up Secrets Manager on Azure (AKV). If the AKV exists, throws a non-terminating error.
 # This fails miserably if there exists a AKV soft-deleted in the same region with the same name. I don't see a way to turn off soft-delete. So if one exists, it requires manual intervention.
@@ -95,12 +96,24 @@ Set-Item Env:\SuppressAzurePowerShellBreakingChangeWarnings "true"
 # Set up ssh key pair (https://docs.microsoft.com/en-us/azure/virtual-machines/linux/mac-create-ssh-keys)
 ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa -N "$sshPassphrase"
 
-# Create "~/.azure/acsServicePrincipal.json" with the format {"$azSubscriptionId":{"service_principal":"$azServicePrincipalObjectId","client_secret":"$azServicePrincipalClientSecret"}}
-Set-Content -Path ~/.azure/acsServicePrincipal.json -Value ('{"', $azSubscriptionId, '":{"service_principal":"', $azServicePrincipalObjectId, '","client_secret":"', $azServicePrincipalClientSecret, '"}}' -join "");
+# Create "~/.azure/acsServicePrincipal.json" with the format {"$azSubscriptionId":{"service_principal":"$azServicePrincipalClientId","client_secret":"$azServicePrincipalClientSecret"}}
+$fileContent = ('{"', $azSubscriptionId, '":{"service_principal":"', $azServicePrincipalClientId, '","client_secret":"', $azServicePrincipalClientSecret, '"}}' -join "");
+Set-Content -Path ~/.azure/acsServicePrincipal.json -Value $fileContent;
+
+$stringAsStream = [System.IO.MemoryStream]::new()
+$writer = [System.IO.StreamWriter]::new($stringAsStream)
+$writer.write($fileContent)
+$writer.Flush()
+$stringAsStream.Position = 0
+Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+Get-FileHash -InputStream $stringAsStream | Select-Object Hash
+Write-Debug ("fileContent string length: {0}" -f $fileContent.length);
+Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
 Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 Write-Debug "Directory Listing"; 
 ls -la ~/.azure/acsServicePrincipal*
+Get-FileHash -Path ~/.azure/acsServicePrincipal.json
 Get-Content -Path ~/.azure/acsServicePrincipal.json
 Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
