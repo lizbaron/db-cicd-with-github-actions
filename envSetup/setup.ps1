@@ -1,8 +1,7 @@
 Param( 
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $projectName,
+    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $azServicePrincipalCredentials,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $azServicePrincipalObjectId,
-    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][Security.SecureString]$azServicePrincipalClientSecret,
-    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $azSubscriptionId,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $sshPassphrase,
     [Parameter(Mandatory=$false)][Switch] $debugOn
 );
@@ -55,8 +54,13 @@ Write-Debug ("AKS Win User Name: {0}" -f "$aksWinUser");
 Write-Debug ("AKS Win Node Pool Name: {0}" -f "$aksWinNodePoolName"); 
 Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
+# Parse service principal credentials to extract the subscription id and client secret.
+$convertedCredentials = (ConvertFrom-Json $azServicePrincipalCredentials)
+$azSubscriptionId = $convertedCredentials.subscriptionId
+$azServicePrincipalClientSecret = $convertedCredentials.clientSecret
+
 # Set up Secrets Manager on Azure (AKV). If the AKV exists, throws a non-terminating error.
-# @SM --> TODO: This fails miserably if there exists a AKV soft-deleted in the same region with the same name. I don't see a way to turn off soft-delete
+# This fails miserably if there exists a AKV soft-deleted in the same region with the same name. I don't see a way to turn off soft-delete. So if one exists, it requires manual intervention.
 New-AzKeyVault -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -Location "$region"
 
 # The Azure Key Vault RBAC is two separate levels, management and data. The Contributor role assigned above to the azure service principal as part of manualPrep.ps1 is for the management level. Additional permissions are required to manipulate the data level. (https://docs.microsoft.com/en-us/azure/key-vault/general/overview-security)
@@ -86,24 +90,18 @@ New-AzContainerRegistry -ResourceGroupName "$azResourceGroupName" -Name "$contai
 # Suppress irritating warnings about breaking changes in New-AzAksCluster, "WARNING: Upcoming breaking changes in the cmdlet 'New-AzAksCluster' :The cmdlet 'New-AzAksCluster' is replacing this cmdlet. - The parameter : 'NodeVmSetType' is changing. - Change description : Default value will be changed from AvailabilitySet to VirtualMachineScaleSets. - The parameter : 'NetworkPlugin' is changing. - Change description : Default value will be changed from None to azure."
 Set-Item Env:\SuppressAzurePowerShellBreakingChangeWarnings "true"
 
-$azServicePrincipalCreds = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "$azServicePrincipalObjectId",$azServicePrincipalClientSecret
+# $azServicePrincipalCreds = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "$azServicePrincipalObjectId",$azServicePrincipalClientSecret
 
 # Set up ssh key pair (https://docs.microsoft.com/en-us/azure/virtual-machines/linux/mac-create-ssh-keys)
 ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa -N "$sshPassphrase"
 
-# Create "~/.azure/acsServicePrincipal.json" as {"$azSubscriptionId":{"service_principal":"$azServicePrincipalObjectId","client_secret":"$azServicePrincipalClientSecret"}}
-Set-Content -Path ~/.azure/acsServicePrincipal.json -Value ('{"', $azSubscriptionId, '":{"service_principal":"', $azServicePrincipalObjectId, '","client_secret":"', (ConvertFrom-SecureString -SecureString $azServicePrincipalClientSecret -AsPlainText), '"}}' -join "")
 
-Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-Write-Debug "Directory Listing"; 
-ls -la ~/.azure/acsServicePrincipal*
-Get-Content -Path ~/.azure/acsServicePrincipal.json
-Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+# Create "~/.azure/acsServicePrincipal.json" with the format {"$azSubscriptionId":{"service_principal":"$azServicePrincipalObjectId","client_secret":"$azServicePrincipalClientSecret"}}
+Set-Content -Path ~/.azure/acsServicePrincipal.json -Value ('{"', $azSubscriptionId, '":{"service_principal":"', $azServicePrincipalObjectId, '","client_secret":"', $azServicePrincipalClientSecret, '"}}' -join "");
 
 # Create a new AKS Cluster with a single linux node
 # TODO: Figure out if we can create a .json file for the service principal a la https://github.com/Azu re/azure-powershell/issues/13012 
 New-AzAksCluster -Force -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword;
 
 # Add a Windows Server node pool to our existing cluster
-# @SM --> TODO: Azure free trial account vCPU region limits do not allow for the deployment of a second AKS node. As of right now, it is not possible to request an increase in vCPU region limits for free accounts.
 New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName" -VMSetType VirtualMachineScaleSets

@@ -11,9 +11,13 @@ az group create -l $region -n $azResourceGroupName
 # Ensure the resource group Provisioning State is Suceeded. For example:
 $sleepInterval = 10;
 $waitTimeLimit = 0;
-while ("Succeeded" -ne (az group list --query "[?name=='$azResourceGroupName'].{provisioningState: properties.provisioningState}" -o tsv) -AND $waitTimeLimit -le 60) {
+while ("Succeeded" -ne (az group list --query "[?name=='$azResourceGroupName'].{provisioningState: properties.provisioningState}" -o tsv)) {
     Start-Sleep $sleepInterval;
     $waitTimeLimit += $sleepInterval;
+    if($waitTimeLimit -ge 60){
+        throw "Something catastrophic has happened! The expected provisioning state was not found after $waitTimeLimit seconds.";
+    }
+
 }
 
 # Create the service principal.
@@ -41,15 +45,21 @@ Write-Output "💖   GitHub secrets can be set by going to Settings > Secrets > 
 Write-Output "💖"; 
 Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
 
+$serviceProviders = 'Microsoft.KeyVault', 'Microsoft.Kubernetes', 'Microsoft.ContainerRegistry';
+
 # Register required services
-az provider register --namespace 'Microsoft.KeyVault' 
-az provider register --namespace 'Microsoft.ContainerRegistry' 
-az provider register --namespace 'Microsoft.Kubernetes' 
+foreach ($item in $serviceProviders) {
+    az provider register --namespace $item;
+}
 
 # Wait until all required services are registered.
+Write-Output "💖   Waiting for registration of service providers. 💖"; 
 $waitTimeLimit = 0;
-while ((-join (az provider list --query "[?contains('Microsoft.KeyVault|Microsoft.Kubernetes|Microsoft.ContainerRegistry',namespace)].{registrationState: registrationState}" -o tsv)).Replace("Registered","").length -gt 0 -AND $waitTimeLimit -le 300) {
+while ((az provider list --query ("[?contains('", ($serviceProviders -join '|'), "',namespace)].{registrationState: registrationState}" -join "") -o tsv) -join "" -ne "Registered" * $serviceProviders.count) {
     Start-Sleep $sleepInterval;
     $waitTimeLimit += $sleepInterval;
+    if($waitTimeLimit -ge 300){
+        throw "Something catastrophic has happened! The expected registration states were not found after $waitTimeLimit seconds.";
+    }
 }
 
