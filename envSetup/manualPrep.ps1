@@ -1,7 +1,10 @@
+Param( 
+    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $projectName  = "db-cicd-with-github-actions"
+);
+
 
 $azSubscriptionId = az account show --query id -o tsv
 $region = "eastus2"
-$projectName = "db-cicd-with-github-actions"
 $azResourceGroupName = "rg_" + $projectName
 $azServicePrincipalName = "sp_" + $projectName
 

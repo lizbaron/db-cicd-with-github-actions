@@ -59,12 +59,14 @@ $azServicePrincipalClientId = $convertedCredentials.clientId;
 $azSubscriptionId = $convertedCredentials.subscriptionId;
 $azServicePrincipalClientSecret = $convertedCredentials.clientSecret;
 
+$azServicePrincipalObjectId = (Get-AzADServicePrincipal -ApplicationId $azServicePrincipalClientId).Id
+
 # Set up Secrets Manager on Azure (AKV). If the AKV exists, throws a non-terminating error.
 # This fails miserably if there exists a AKV soft-deleted in the same region with the same name. I don't see a way to turn off soft-delete. So if one exists, it requires manual intervention.
 New-AzKeyVault -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -Location "$region"
 
 # The Azure Key Vault RBAC is two separate levels, management and data. The Contributor role assigned above to the azure service principal as part of manualPrep.ps1 is for the management level. Additional permissions are required to manipulate the data level. (https://docs.microsoft.com/en-us/azure/key-vault/general/overview-security)
-Set-AzKeyVaultAccessPolicy -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -ObjectId $azServicePrincipalClientId -PermissionsToSecrets Get,Set
+Set-AzKeyVaultAccessPolicy -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -ObjectId $azServicePrincipalObjectId -PermissionsToSecrets Get,Set
 
 # ^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%\^&\*\(\)])[a-zA-Z\d!@#$%\^&\*\(\)]***12,123***$
 $part1 = (Get-RandomCharacters -length 10 -characters 'abcdefghiklmnoprstuvwxyz');
@@ -90,7 +92,7 @@ New-AzContainerRegistry -ResourceGroupName "$azResourceGroupName" -Name "$contai
 # Suppress irritating warnings about breaking changes in New-AzAksCluster, "WARNING: Upcoming breaking changes in the cmdlet 'New-AzAksCluster' :The cmdlet 'New-AzAksCluster' is replacing this cmdlet. - The parameter : 'NodeVmSetType' is changing. - Change description : Default value will be changed from AvailabilitySet to VirtualMachineScaleSets. - The parameter : 'NetworkPlugin' is changing. - Change description : Default value will be changed from None to azure."
 Set-Item Env:\SuppressAzurePowerShellBreakingChangeWarnings "true"
 
-# $azServicePrincipalCreds = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "$azServicePrincipalClientId",$azServicePrincipalClientSecret
+$azServicePrincipalCreds = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "$azServicePrincipalClientId",$azServicePrincipalClientSecret
 
 # Set up ssh key pair (https://docs.microsoft.com/en-us/azure/virtual-machines/linux/mac-create-ssh-keys)
 ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa -N "$sshPassphrase"
@@ -118,7 +120,7 @@ Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
 # Create a new AKS Cluster with a single linux node
 # TODO: Figure out if we can create a .json file for the service principal a la https://github.com/Azu re/azure-powershell/issues/13012 
-New-AzAksCluster -Force -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword;
+New-AzAksCluster -Force -ServicePrincipalIdAndSecret $azServicePrincipalCreds -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword;
 
 # Add a Windows Server node pool to our existing cluster
 New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName" -VMSetType VirtualMachineScaleSets

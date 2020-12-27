@@ -24,6 +24,7 @@ jobs:
 
     env:
       PROJECT_NAME: ${{ github.event.inputs.projectName }}
+      # TODO, generalize the pipeline by allowing the fetch of credentials based on project name a la ${{ secrets.AZ_SP_CRED_$projectName}}
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets.AZ_SP_CREDENTIALS }}
       SSH_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
 
