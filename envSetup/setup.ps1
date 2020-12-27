@@ -92,7 +92,12 @@ New-AzContainerRegistry -ResourceGroupName "$azResourceGroupName" -Name "$contai
 # Suppress irritating warnings about breaking changes in New-AzAksCluster, "WARNING: Upcoming breaking changes in the cmdlet 'New-AzAksCluster' :The cmdlet 'New-AzAksCluster' is replacing this cmdlet. - The parameter : 'NodeVmSetType' is changing. - Change description : Default value will be changed from AvailabilitySet to VirtualMachineScaleSets. - The parameter : 'NetworkPlugin' is changing. - Change description : Default value will be changed from None to azure."
 Set-Item Env:\SuppressAzurePowerShellBreakingChangeWarnings "true"
 
-$azServicePrincipalCreds = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "$azServicePrincipalClientId",$azServicePrincipalClientSecret
+$psCredentialParameters = @{
+    userName = "$azServicePrincipalClientId";
+    password = (ConvertTo-SecureString -String $azServicePrincipalClientSecret -AsPlainText -Force);
+}
+
+$azServicePrincipalCreds = New-Object -TypeName System.Management.Automation.PSCredential @psCredentialParameters;
 
 # Set up ssh key pair (https://docs.microsoft.com/en-us/azure/virtual-machines/linux/mac-create-ssh-keys)
 ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa -N "$sshPassphrase"
