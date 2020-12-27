@@ -95,9 +95,14 @@ Set-Item Env:\SuppressAzurePowerShellBreakingChangeWarnings "true"
 # Set up ssh key pair (https://docs.microsoft.com/en-us/azure/virtual-machines/linux/mac-create-ssh-keys)
 ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa -N "$sshPassphrase"
 
-
 # Create "~/.azure/acsServicePrincipal.json" with the format {"$azSubscriptionId":{"service_principal":"$azServicePrincipalObjectId","client_secret":"$azServicePrincipalClientSecret"}}
 Set-Content -Path ~/.azure/acsServicePrincipal.json -Value ('{"', $azSubscriptionId, '":{"service_principal":"', $azServicePrincipalObjectId, '","client_secret":"', $azServicePrincipalClientSecret, '"}}' -join "");
+
+Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+Write-Debug "Directory Listing"; 
+ls -la ~/.azure/acsServicePrincipal*
+Get-Content -Path ~/.azure/acsServicePrincipal.json
+Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
 # Create a new AKS Cluster with a single linux node
 # TODO: Figure out if we can create a .json file for the service principal a la https://github.com/Azu re/azure-powershell/issues/13012 
