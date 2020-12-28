@@ -59,6 +59,10 @@ $azServicePrincipalClientId = $convertedCredentials.clientId;
 $azSubscriptionId = $convertedCredentials.subscriptionId;
 $azServicePrincipalClientSecret = $convertedCredentials.clientSecret;
 
+Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+Write-Debug ("✨   azServicePrincipalClientId: {0}" -f "$azServicePrincipalClientId"); 
+Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+
 $azServicePrincipalObjectId = (Get-AzADServicePrincipal -ApplicationId $azServicePrincipalClientId).Id
 
 # Set up Secrets Manager on Azure (AKV). If the AKV exists, throws a non-terminating error.
@@ -96,6 +100,10 @@ $psCredentialParameters = @{
     userName = "$azServicePrincipalClientId";
     password = (ConvertTo-SecureString -String $azServicePrincipalClientSecret -AsPlainText -Force);
 }
+
+Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+Write-Debug ("✨   psCredentialParameters: {0}" -f "$psCredentialParameters"); 
+Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
 $azServicePrincipalCreds = New-Object -TypeName System.Management.Automation.PSCredential @psCredentialParameters;
 
