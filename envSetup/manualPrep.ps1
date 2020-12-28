@@ -32,20 +32,8 @@ Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  
 Write-Output "💖";
 Write-Output "💖   Copy the json snippet above and save it as the GitHub Secret `"AZ_SP_CREDENTIALS`"."; 
 Write-Output "💖";
-Write-Output "💖   Copy the client secret from the json snippet save it as the GitHub Secret `"AZ_SP_CLIENT_SECRET`"."; 
-Write-Output "💖";
 Write-Output "💖   GitHub secrets can be set by going to Settings > Secrets > `"New repository secret`".";
 Write-Output "💖";
-Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
-
-az ad sp list --query "[?appDisplayName=='$azServicePrincipalName'].{objectId: objectId}" -o table
-Write-Output "";
-Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   INSTRUCTIONS  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
-Write-Output "💖";
-Write-Output "💖   Copy the object id and save it as the GitHub Secret `"AZ_SP_OBJECT_ID`".";
-Write-Output "💖";
-Write-Output "💖   GitHub secrets can be set by going to Settings > Secrets > `"New repository secret`".";
-Write-Output "💖"; 
 Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
 
 $serviceProviders = 'Microsoft.KeyVault', 'Microsoft.Kubernetes', 'Microsoft.ContainerRegistry';
