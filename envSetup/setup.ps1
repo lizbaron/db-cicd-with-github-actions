@@ -102,7 +102,8 @@ $psCredentialParameters = @{
 }
 
 Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-Write-Debug ("✨   psCredentialParameters: {0}" -f "$psCredentialParameters"); 
+Write-Debug "✨   psCredentialParameters:";
+$psCredentialParameters; 
 Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
 $azServicePrincipalCreds = New-Object -TypeName System.Management.Automation.PSCredential @psCredentialParameters;
