@@ -63,7 +63,7 @@ $azServicePrincipalObjectId = (Get-AzADServicePrincipal -ApplicationId $azServic
 
 # Set up Secrets Manager on Azure (AKV). If the AKV exists, throws a non-terminating error.
 # This fails miserably if there exists a AKV soft-deleted in the same region with the same name. I don't see a way to turn off soft-delete. So if one exists, it requires manual intervention.
-New-AzKeyVault -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -Location "$region"
+New-AzKeyVault -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -Location "$region" -SoftDeleteRetentionInDays 0
 
 # The Azure Key Vault RBAC is two separate levels, management and data. The Contributor role assigned above to the azure service principal as part of manualPrep.ps1 is for the management level. Additional permissions are required to manipulate the data level. (https://docs.microsoft.com/en-us/azure/key-vault/general/overview-security)
 Set-AzKeyVaultAccessPolicy -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -ObjectId $azServicePrincipalObjectId -PermissionsToSecrets Get,Set
@@ -106,26 +106,9 @@ ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa -N "$sshPassphrase"
 $fileContent = ('{"', $azSubscriptionId, '":{"service_principal":"', $azServicePrincipalClientId, '","client_secret":"', $azServicePrincipalClientSecret, '"}}' -join "");
 Set-Content -Path ~/.azure/acsServicePrincipal.json -Value $fileContent;
 
-$stringAsStream = [System.IO.MemoryStream]::new()
-$writer = [System.IO.StreamWriter]::new($stringAsStream)
-$writer.write($fileContent)
-$writer.Flush()
-$stringAsStream.Position = 0
-Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-Get-FileHash -InputStream $stringAsStream | Select-Object Hash
-Write-Debug ("fileContent string length: {0}" -f $fileContent.length);
-Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-
-Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-Write-Debug "Directory Listing"; 
-ls -la ~/.azure/acsServicePrincipal*
-Get-FileHash -Path ~/.azure/acsServicePrincipal.json
-Get-Content -Path ~/.azure/acsServicePrincipal.json
-Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-
 # Create a new AKS Cluster with a single linux node
 # TODO: Figure out if we can create a .json file for the service principal a la https://github.com/Azu re/azure-powershell/issues/13012 
-New-AzAksCluster -Force -ServicePrincipalIdAndSecret $azServicePrincipalCreds -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword;
+New-AzAksCluster -Force -ServicePrincipalIdAndSecret $azServicePrincipalCreds -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword -KubernetesVersion "1.19.3";
 
 # Add a Windows Server node pool to our existing cluster
-New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName" -VMSetType VirtualMachineScaleSets
+New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName" -VMSetType VirtualMachineScaleSets -KubernetesVersion "1.19.3";
