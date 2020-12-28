@@ -62,8 +62,8 @@ $azServicePrincipalClientSecret = $convertedCredentials.clientSecret;
 $azServicePrincipalObjectId = (Get-AzADServicePrincipal -ApplicationId $azServicePrincipalClientId).Id
 
 # Set up Secrets Manager on Azure (AKV). If the AKV exists, throws a non-terminating error.
-# This fails miserably if there exists a AKV soft-deleted in the same region with the same name. I don't see a way to turn off soft-delete. So if one exists, it requires manual intervention.
-New-AzKeyVault -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -Location "$region" -SoftDeleteRetentionInDays 0
+# This fails miserably if there exists a AKV soft-deleted in the same region with the same name. I don't see a way to turn off soft-delete. So if one exists, it requires manual intervention. Turns out that the minimim SoftDeleteRetentionInDays is the magic number 7.
+New-AzKeyVault -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -Location "$region" -SoftDeleteRetentionInDays 7
 
 # The Azure Key Vault RBAC is two separate levels, management and data. The Contributor role assigned above to the azure service principal as part of manualPrep.ps1 is for the management level. Additional permissions are required to manipulate the data level. (https://docs.microsoft.com/en-us/azure/key-vault/general/overview-security)
 Set-AzKeyVaultAccessPolicy -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -ObjectId $azServicePrincipalObjectId -PermissionsToSecrets Get,Set
