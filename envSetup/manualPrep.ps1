@@ -34,7 +34,7 @@ Write-Output "💖   Copy the json snippet above and save it as the GitHub Secre
 Write-Output "💖";
 Write-Output "💖   GitHub secrets can be set by going to Settings > Secrets > `"New repository secret`".";
 Write-Output "💖";
-Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
+Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
 
 $serviceProviders = 'Microsoft.KeyVault', 'Microsoft.Kubernetes', 'Microsoft.ContainerRegistry';
 
@@ -44,7 +44,10 @@ foreach ($item in $serviceProviders) {
 }
 
 # Wait until all required services are registered.
-Write-Output "💖   Waiting for registration of service providers. 💖"; 
+Write-Output "";
+Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
+Write-Output "💖   Waiting for registration of service providers."; 
+Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
 $waitTimeLimit = 0;
 while ((az provider list --query ("[?contains('", ($serviceProviders -join '|'), "',namespace)].{registrationState: registrationState}" -join "") -o tsv) -join "" -ne "Registered" * $serviceProviders.count) {
     Start-Sleep $sleepInterval;
