@@ -1,0 +1,57 @@
+# This workflow creates two SQL Server instances (2017, 2019) on kubernetes in separate namespaces using saved container images in an ACR. 
+# Builds and tests a database project (in this case tSQLt) 
+# 
+# AZURE: Before this workflow will run successfully you must do the following
+# 1. Run the github action workflow, "cicd_environment_setup.yml"
+
+name: CI Build and Test
+
+# Controls when the action will run. 
+on:
+  workflow_dispatch: 
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    name: Build Artifact
+    # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
+    # Note: [https://kubernetes.io/docs/tasks/tools/install-kubectl/#before-you-begin]
+    #     You must use a kubectl version that is within one minor version difference of your cluster. For example, a v1.2 client should work with v1.1, v1.2, and v1.3 master. Using the latest version of kubectl helps avoid unforeseen issues.
+    runs-on: windows-latest # Kubectl 1.20
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # documentation: https://github.com/azure/login#configure-azure-credentials
+      # next steps is to set up a service principal in azure which has permission to set up its own resource group and resources within that resource group, but not mess with those that it has not set up.
+      - name: login via az module
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.az_sp_credentials}}
+          enable-azpssession: true 
+
+  test:
+    name: Test Artifact
+    # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
+    # Note: [https://kubernetes.io/docs/tasks/tools/install-kubectl/#before-you-begin]
+    #     You must use a kubectl version that is within one minor version difference of your cluster. For example, a v1.2 client should work with v1.1, v1.2, and v1.3 master. Using the latest version of kubectl helps avoid unforeseen issues.
+    runs-on: windows-latest # Kubectl 1.20
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # documentation: https://github.com/azure/login#configure-azure-credentials
+      # next steps is to set up a service principal in azure which has permission to set up its own resource group and resources within that resource group, but not mess with those that it has not set up.
+      - name: login via az module
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.az_sp_credentials}}
+          enable-azpssession: true 
+
+      
+    
