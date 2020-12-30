@@ -107,7 +107,7 @@ Set-Content -Path ~/.azure/acsServicePrincipal.json -Value $fileContent;
 
 # Create a new AKS Cluster with a single linux node
 # TODO: Figure out if we can create a .json file for the service principal a la https://github.com/Azu re/azure-powershell/issues/13012 
-New-AzAksCluster -Force -ServicePrincipalIdAndSecret $azServicePrincipalCreds -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword -KubernetesVersion "1.19.3";
+New-AzAksCluster -Force -ServicePrincipalIdAndSecret $azServicePrincipalCreds -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword -KubernetesVersion "1.19.3" -NodeVmSize Standard_A1_v2;
 
 # Add a Windows Server node pool to our existing cluster
-New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName" -VMSetType VirtualMachineScaleSets -Count 1 -KubernetesVersion "1.19.3";
+New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName" -VMSetType VirtualMachineScaleSets -Count 1 -KubernetesVersion "1.19.3" -VmSize Standard_D1_v2;
