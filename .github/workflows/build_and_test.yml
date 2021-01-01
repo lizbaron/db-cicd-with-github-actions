@@ -147,6 +147,7 @@ jobs:
           Write-Host ("namespace value: {0}" -f $env:namespace); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Get-ChildItem env:
           
       # # documentation: https://github.com/azure/login#configure-azure-credentials
       # # next steps is to set up a service principal in azure which has permission to set up its own resource group and resources within that resource group, but not mess with those that it has not set up.
