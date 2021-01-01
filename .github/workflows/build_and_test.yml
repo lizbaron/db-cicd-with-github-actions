@@ -14,6 +14,8 @@ on:
 jobs:
   build-tSQLt:
     name: build tSQLt
+    if: ${{ false }}
+
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
     # Note: [https://kubernetes.io/docs/tasks/tools/install-kubectl/#before-you-begin]
     #     You must use a kubectl version that is within one minor version difference of your cluster. For example, a v1.2 client should work with v1.1, v1.2, and v1.3 master. Using the latest version of kubectl helps avoid unforeseen issues.
@@ -26,7 +28,7 @@ jobs:
       
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it. But this is misleading, because this variable is only really helpful as ${{ github.workspace }}
       - name: Checkout self
         uses: actions/checkout@v2
         with:
@@ -43,7 +45,7 @@ jobs:
       - name: create and install unofficial pfx file for signing dlls
         shell: pwsh
         run: |
-          $cert = New-SelfSignedCertificate -FriendlyName "tSQLt_testKey" -Type CodeSigningCert -Subject "CN=localhost" -HashAlgorithm SHA1 -KeyLength 2048 -SmimeCapabilities -CertStoreLocation "cert:/LocalMachine" -Provider "Microsoft Strong Cryptographic Provider"
+          $cert = New-SelfSignedCertificate -FriendlyName "tSQLt_testKey" -Type CodeSigningCert -Subject "CN=localhost" -KeyAlgorithm RSA -HashAlgorithm SHA1 -KeyLength 2048 -SmimeCapabilities -CertStoreLocation "cert:/LocalMachine" -Provider "Microsoft Strong Cryptographic Provider"
           $pwd = ConvertTo-SecureString -String "$env:PFX_PASSWORD" -Force -AsPlainText
           $pfxFile = Export-PfxCertificate -cert ("Cert:\LocalMachine\My\" + $cert.thumbprint) -FilePath $env:PFX_PATH -Password $pwd
           &"${{ github.workspace }}\tSQLt\Build\SnInstallPfx" $env:PFX_PATH "$env:PFX_PASSWORD" tSQLt_OfficialSigningKey
@@ -98,19 +100,157 @@ jobs:
     # Note: [https://kubernetes.io/docs/tasks/tools/install-kubectl/#before-you-begin]
     #     You must use a kubectl version that is within one minor version difference of your cluster. For example, a v1.2 client should work with v1.1, v1.2, and v1.3 master. Using the latest version of kubectl helps avoid unforeseen issues.
     runs-on: windows-latest # Kubectl 1.20
+    strategy: 
+      matrix:
+        mssqlversion: [mssql2017, mssql2019]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
 
-      # documentation: https://github.com/azure/login#configure-azure-credentials
-      # next steps is to set up a service principal in azure which has permission to set up its own resource group and resources within that resource group, but not mess with those that it has not set up.
-      - name: login via az module
-        uses: azure/login@v1
+      - name: Checkout self
+        uses: actions/checkout@v2
         with:
-          creds: ${{secrets.az_sp_credentials}}
-          enable-azpssession: true 
+          path: cicd
 
+      - name: Checkout tSQLt
+        uses: actions/checkout@v2
+        with:
+          repository: tSQLt-org/tSQLt
+          path: tSQLt
+          token: ${{ secrets.my_pat }}
+
+      - name: print matrix mssqlversion
+        shell: pwsh
+        run: |
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          Write-Host ("Matrix mssqlversion: {0}" -f "${{ matrix.mssqlversion }}"); 
+          Write-Host "";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+
+      # # documentation: https://github.com/azure/login#configure-azure-credentials
+      # # next steps is to set up a service principal in azure which has permission to set up its own resource group and resources within that resource group, but not mess with those that it has not set up.
+      # - name: login via az module
+      #   uses: azure/login@v1
+      #   with:
+      #     creds: ${{secrets.az_sp_credentials}}
+      #     enable-AzPSSession: true 
+
+      # # documentation: https://github.com/Azure/PowerShell
+      # - name: run azure powershell script
+      #   uses: azure/powershell@v1
+      #   with:
+      #     azPSVersion: 'latest'
+      #     errorActionPreference: 'continue'
+      #     inlineScript: |
+
+      # # documentation: https://github.com/Azure/get-keyvault-secrets
+      # - name: get azure secrets
+      #   uses: Azure/get-keyvault-secrets@v1.0
+      #   with:
+      #     keyvault: "myVault"
+      #     secrets: 'mySecret1, mySecret2'  # comma separated list of secret keys that need to be fetched from the Key Vault 
+      #   id: get-azure-secrets
+
+      # # Set the target AKS cluster.
+      # - name: 
+      #   uses: Azure/aks-set-context@v1
+      #   with:
+      #     creds: '${{ secrets.AZURE_CREDENTIALS }}'
+      #     cluster-name: contoso
+      #     resource-group: contoso-rg
+          
+      # # documentation: https://github.com/Azure/k8s-create-secret
+      # - name: Set imagePullSecret 
+      #   uses: azure/k8s-create-secret@v1
+      #   with:
+      #     namespace: 'myapp'
+      #     container-registry-url: 'containerregistry.contoso.com'
+      #     container-registry-username: ${{ secrets.REGISTRY_USERNAME }}
+      #     container-registry-password: ${{ secrets.REGISTRY_PASSWORD }}
+      #     secret-name: 'contoso-cr'
+      #   id: create-secret
+
+      # - name: deploy to aks
+      #   uses: Azure/k8s-deploy@v1.3
+      #   with:
+      #     namespace: 'myapp'
+      #     manifests: |
+      #         deployment.yaml
+      #         service.yaml
+      #     images: 'contoso.azurecr.io/myapp:${{ event.run_id }}'
+      #     imagepullsecrets: |
+      #       image-pull-secret1
+      #       image-pull-secret2
+      #     kubectl-version: 'latest'
+
+
+# >>>>>>>>>>>> START HERE <<<<<<<<<<<<<<
       
+    # - task: PowerShell@2
+    #   name: GetVariablesInPlace
+    #   inputs:
+    #     targetType: 'inline'
+    #     script: |
+    #       Write-Host '$(CreateVMAndMore.SerializedDTLDetails)';
+    #       $DTLDetails = (ConvertFrom-JSON '$(CreateVMAndMore.SerializedDTLDetails)');
+    #       #-----------------------------------------------------------------------#
+    #       # IMPORTANT (and, you've got to be kidding me):                         #
+    #       # The space below is absolutely required to make the ANT Task work.     #
+    #       #--------------------------------------|--------------------------------#
+    #       $FQDNAndPort = $DTLDetails.SQLVmFQDN+", "+$DTLDetails.SQLVmPort;
+    #       #--------------------------------------|--------------------------------#
+    #       #-----------------------------------------------------------------------#
+    #       $SQLVersion = $DTLDetails.SQLVersion;
+    #       Write-Host "##vso[task.setvariable variable=FQDNAndPort]$FQDNAndPort"
+    #       Write-Host "##vso[task.setvariable variable=SQLVersion]$SQLVersion"
+    # - task: PowerShell@2
+    #   name: PrintSQLVersionInfo
+    #   env:
+    #     USER_NAME: $(tSQLt-UserForCIEnvironment-UserName)
+    #     PASSWORD: $(tSQLt-UserForCIEnvironment-Password)
+    #   inputs:
+    #     targetType: 'inline'
+    #     script: |
+    #       $DS = Invoke-Sqlcmd -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$(FQDNAndPort)" -Username "$env:USER_NAME" -Password "$env:PASSWORD" -As DataSet
+    #       $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
     
+    # - task: Ant@1
+    #   name: Run_tSQLt_validatebuild_xml
+    #   inputs:
+    #     buildFile: '../tSQLt/Build/tSQLt.validatebuild.xml'
+    #     options: '-Ddb.version="$(SQLVersion)" -Ddb.server="$(FQDNAndPort)" -Ddb.name=tSQLt_dev -Ddb.login="-U $(tSQLt-UserForCIEnvironment-UserName) -P $(tSQLt-UserForCIEnvironment-Password)" -Dsqlcmd.path="$(SQLCMDPath)"'
+    #     targets: 'all'
+    #     publishJUnitResults: true
+    #     testResultsFiles: '../**/?(Example)TestResults*.xml'
+    #     testRunTitle: '$(SQLVersionEdition)'
+    #     javaHomeOption: 'JDKVersion'
+        
+    # - task: PowerShell@2
+    #   name: CreateTestResultArtifact
+    #   inputs:
+    #     targetType: 'inline'
+    #     failOnStderr: true
+    #     script: |
+    #       "---------------------------------------------------"
+    #       $BasePath = "$(Build.SourcesDirectory)\..";
+    #       $BasePath;
+    #       "==================================================="
+    #       $ArtifactPath = ($BasePath+"\tSQLt\Build\output\TestResults\");
+    #       $ArtifactPath;
+    #       "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+    #       New-Item -Path $ArtifactPath  -ItemType directory -Force
+    #       (Get-ChildItem $BasePath -recurse);
+    #       "== == == == == == == == == == == == == == == == == "
+    #       (Get-ChildItem $BasePath -recurse)|Out-File  -FilePath $ArtifactPath+"dir.txt"
+    #       (Get-ChildItem $BasePath -recurse -include "*TestResults*.xml").FullName; 
+    #       "==-==-==-==-==-==-==-==-==-==-==-==-==-==-==-==-==-"
+    #       (Get-ChildItem $BasePath -recurse -include "*TestResults*.xml").FullName|Copy-Item -Destination $ArtifactPath -recurse -PassThru
+    #       Set-Content -Path ($ArtifactPath+"CommitId.txt") -Value "$(Build.SourceVersion)"
+    #       "=== === === === === === === === === === === === ==="
+    # - task: PublishPipelineArtifact@1
+    #   name: PublishTestResultArtifact
+    #   inputs:
+    #     targetPath: '$(Build.SourcesDirectory)/../tSQLt/Build/output/TestResults'
+    #     artifact: 'TestResults_$(SQLVersionEdition)'
+    #     publishLocation: 'pipeline'
