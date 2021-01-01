@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mssql2017-deployment
+  labels:
+    app: mssql2017-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mssql2017-db
+  template:
+    metadata:
+      labels:
+        app: mssql2017-db
+    spec:
+      nodeSelector:
+        agentpool: akswin
+      containers:
+      - name: mssql2017-db
+        image: crne3b0c44298.azurecr.io/mssql2017
+        env:
+        - name: sa_password
+          value: W3lc0mE002
+        resources:
+          limits:
+            cpu: 1
+            memory: 4G
+          requests:
+            cpu: .1
+            memory: 300M
+        ports:
+          - containerPort: 80
+            name: other 
+            protocol: TCP
+          - containerPort: 8080
+            name: wiremock
+            protocol: TCP
+          - containerPort: 1433
+            name: mssql
+            protocol: TCP
+
