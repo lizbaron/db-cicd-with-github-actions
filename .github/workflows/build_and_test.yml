@@ -136,37 +136,37 @@ jobs:
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
-      # # documentation: https://github.com/azure/login#configure-azure-credentials
-      # # next steps is to set up a service principal in azure which has permission to set up its own resource group and resources within that resource group, but not mess with those that it has not set up.
-      # - name: login via az module
-      #   uses: azure/login@v1
-      #   with:
-      #     creds: ${{secrets.AZ_SP_CREDENTIALS}}
-      #     enable-AzPSSession: true 
+      # documentation: https://github.com/azure/login#configure-azure-credentials
+      # next steps is to set up a service principal in azure which has permission to set up its own resource group and resources within that resource group, but not mess with those that it has not set up.
+      - name: login via az module
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.AZ_SP_CREDENTIALS}}
+          enable-AzPSSession: true 
 
-      # # documentation: https://github.com/Azure/get-keyvault-secrets
-      # - name: get azure secrets
-      #   uses: Azure/get-keyvault-secrets@v1.0
-      #   with:
-      #     keyvault: "sm-52F71DC003"
-      #     secrets: 'azResourceGroupName, aksClusterName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
-      #   id: get-azure-secrets
+      # documentation: https://github.com/Azure/get-keyvault-secrets
+      - name: get azure secrets
+        uses: Azure/get-keyvault-secrets@v1.0
+        with:
+          keyvault: "sm-52F71DC003"
+          secrets: 'azResourceGroupName, aksClusterName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
+        id: get-azure-secrets
 
-      # # Set the target AKS cluster.
-      # - name: set aks context
-      #   uses: Azure/aks-set-context@v1
-      #   with:
-      #     creds: '${{ secrets.AZ_SP_CREDENTIALS }}'
-      #     cluster-name: ${{ steps.get-azure-secrets.outputs.aksClusterName }}
-      #     resource-group: ${{ steps.get-azure-secrets.outputs.azResourceGroupName }}
+      # Set the target AKS cluster.
+      - name: set aks context
+        uses: Azure/aks-set-context@v1
+        with:
+          creds: '${{ secrets.AZ_SP_CREDENTIALS }}'
+          cluster-name: ${{ steps.get-azure-secrets.outputs.aksClusterName }}
+          resource-group: ${{ steps.get-azure-secrets.outputs.azResourceGroupName }}
 
-      # - name: create the aks namespace for this job
-      #   shell: pwsh
-      #   run: |
-      #     kubectl get namespace
-      #     kubectl create namespace pipeline-$(Build.BuildNumber)-${{ matrix.mssqlversion }} # must be no longer than 63 chars https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
+      - name: create the aks namespace for this job
+        shell: pwsh
+        run: |
+          kubectl get namespace
+          kubectl create namespace ns-${{ github.run_id }}-${{ github.run_number }}-${{ matrix.mssqlversion }} # must be no longer than 63 chars https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
 
-# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - 
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
 
 
       # # documentation: https://github.com/Azure/PowerShell
