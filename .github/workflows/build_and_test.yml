@@ -70,7 +70,7 @@ jobs:
           Compress-Archive @compress
  
       - name: ant -debug Build/tSQLt.build.xml
-        run: ant -noinput -debug -buildfile Build/tSQLt.build.xml all
+        run: ant -noinput -debug -buildfile ${{ github.workspace }}\tSQLt\Build\tSQLt.build.xml all
 
       - name: copy files to artifact staging and compress to tSQLtCLR.zip
         shell: pwsh
