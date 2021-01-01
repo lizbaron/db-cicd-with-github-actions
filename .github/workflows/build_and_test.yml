@@ -165,19 +165,19 @@ jobs:
           secrets: 'azResourceGroupName, aksClusterName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
         id: get-azure-secrets
 
-      # # Set the target AKS cluster.
-      # - name: set aks context
-      #   uses: Azure/aks-set-context@v1
-      #   with:
-      #     creds: '${{ secrets.AZ_SP_CREDENTIALS }}'
-      #     cluster-name: ${{ steps.get-azure-secrets.outputs.aksClusterName }}
-      #     resource-group: ${{ steps.get-azure-secrets.outputs.azResourceGroupName }}
+      # Set the target AKS cluster.
+      - name: set aks context
+        uses: Azure/aks-set-context@v1
+        with:
+          creds: '${{ secrets.AZ_SP_CREDENTIALS }}'
+          cluster-name: ${{ steps.get-azure-secrets.outputs.aksClusterName }}
+          resource-group: ${{ steps.get-azure-secrets.outputs.azResourceGroupName }}
 
-      # - name: create the aks namespace for this job
-      #   shell: pwsh
-      #   run: |
-      #     kubectl get namespace
-      #     kubectl create namespace ns-${{ github.run_id }}-${{ github.run_number }}-${{ matrix.mssqlversion }} # must be no longer than 63 chars https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
+      - name: create the aks namespace for this job
+        shell: pwsh
+        run: |
+          kubectl get namespace
+          kubectl create namespace ns-${{ github.run_id }}-${{ github.run_number }}-${{ matrix.mssqlversion }} # must be no longer than 63 chars https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
 
 # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
 
