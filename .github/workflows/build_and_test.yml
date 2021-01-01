@@ -84,9 +84,9 @@ jobs:
       - name: Archive production artifact
         uses: actions/upload-artifact@v2
         with:
+          if-no-files-found: error
           name: tSQLtAndTests
-          path: |
-              $env:ARTIFACT_DIR\tSQLtAndTests.zip
+          path: ${{ env.artifact_dir }}\tSQLtAndTests.zip
 
   test:
     needs: build-tSQLt
