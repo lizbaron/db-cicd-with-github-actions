@@ -76,7 +76,7 @@ jobs:
       - name: create tSQLt artifact staging and compress to tSQLtCLR.zip
         shell: pwsh
         run: |
-          $basePath = "${{ github.workspace }}\tSQLt\Build\output";
+          $basePath = "${{ github.workspace }}\tSQLt\Build\output\";
           $artifactFiles = (@("Version.txt","tSQLt.zip","tSQLt.tests.zip","tSQLtSnippets(SQLPrompt).zip")| ForEach-Object { $basePath + $_ });
           $artifactFiles | Copy-Item -Verbose -Destination $env:ARTIFACT_DIR;
           $filesToCompress = ((Get-ChildItem -Path $env:ARTIFACT_DIR -File).FullName | ForEach-Object {"`""+$_+"`""}) -join ", "
