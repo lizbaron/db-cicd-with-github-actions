@@ -135,8 +135,8 @@ jobs:
           Write-Host ("GitHub SHA: {0}" -f "${{ github.sha }}"); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          echo "namespace=${{ github.run_id }}-${{ github.run_number }}-${{ matrix.mssqlversion }}" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          echo "namespace1=yellow" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "namespace=${{ github.run_id }}-${{ github.run_number }}-${{ matrix.mssqlversion }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "namespace1=yellow" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: print echo namespace env variables
         shell: pwsh
