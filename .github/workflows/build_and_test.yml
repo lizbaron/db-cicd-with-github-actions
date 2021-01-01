@@ -27,7 +27,8 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - name: Checkout self
+        uses: actions/checkout@v2
         with:
           path: cicd
 
@@ -45,7 +46,7 @@ jobs:
           $cert = New-SelfSignedCertificate -FriendlyName "tSQLt_testKey" -Type CodeSigningCert -Subject "CN=localhost" -HashAlgorithm SHA1 -KeyLength 2048 -SmimeCapabilities -CertStoreLocation "cert:/LocalMachine" -Provider "Microsoft Strong Cryptographic Provider"
           $pwd = ConvertTo-SecureString -String "$env:PFX_PASSWORD" -Force -AsPlainText
           $pfxFile = Export-PfxCertificate -cert ("Cert:\LocalMachine\My\" + $cert.thumbprint) -FilePath $env:PFX_PATH -Password $pwd
-          &"$(Build.SourcesDirectory)/Build/SnInstallPfx" $env:PFX_PATH "$env:PFX_PASSWORD" tSQLt_OfficialSigningKey
+          &"${{ github.workspace }}\tSQLt\Build\SnInstallPfx" $env:PFX_PATH "$env:PFX_PASSWORD" tSQLt_OfficialSigningKey
 
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
