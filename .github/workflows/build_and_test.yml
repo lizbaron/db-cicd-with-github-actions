@@ -128,8 +128,8 @@ jobs:
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           Write-Host ("Matrix mssqlversion: {0}" -f "${{ matrix.mssqlversion }}"); 
-          Write-Host ("GitHub Run Id: {0}" -f "${{ github.run.id }}"); 
-          Write-Host ("GitHub Run Number: {0}" -f "${{ github.run.number }}"); 
+          Write-Host ("GitHub Run Id: {0}" -f "${{ github.run_id }}"); 
+          Write-Host ("GitHub Run Number: {0}" -f "${{ github.run_number }}"); 
           Write-Host ("GitHub Action: {0}" -f "${{ github.action }}"); 
           Write-Host ("GitHub Repository: {0}" -f "${{ github.repository }}"); 
           Write-Host ("GitHub SHA: {0}" -f "${{ github.sha }}"); 
