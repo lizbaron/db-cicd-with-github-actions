@@ -61,6 +61,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path $env:ARTIFACT_DIR\tSQLtCLR
+          New-Item -ItemType Directory -Path ${{ github.workspace }}\tSQLt\Build\output
           Get-Item -Path ${{ github.workspace }}\tSQLt\tSQLtCLR\*\bin\*\* -Filter *.dll | Copy-Item -Destination $env:ARTIFACT_DIR\tSQLtCLR -Container:$false
           $compress = @{
             Path = "$env:ARTIFACT_DIR\tSQLtCLR\*.dll"
@@ -72,23 +73,9 @@ jobs:
       - name: ant -debug Build/tSQLt.build.xml
         run: ant -noinput -debug -buildfile ${{ github.workspace }}\tSQLt\Build\tSQLt.build.xml all
 
-      - name: copy files to artifact staging and compress to tSQLtCLR.zip
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Path $env:ARTIFACT_DIR\tSQLtCLR
-          Get-Item -Path ${{ github.workspace }}\tSQLt\tSQLtCLR\*\bin\*\* -Filter *.dll | Copy-Item -Destination $env:ARTIFACT_DIR\tSQLtCLR -Container:$false
-          Copy-Item -Path . -Destination $env:ARTIFACT_DIR\tSQLtCLR -Filter */bin/*/*.dll -Recurse -Container:$false
-          $compress = @{
-            Path = "$env:ARTIFACT_DIR\tSQLtCLR\*.dll"
-            CompressionLevel = "Fastest"
-            DestinationPath = "$env:ARTIFACT_DIR\tSQLtCLR.zip"
-            }
-          Compress-Archive @compress
-
       - name: create tSQLt artifact staging and compress to tSQLtCLR.zip
         shell: pwsh
         run: |
-          $env:ARTIFACT_DIR
           $basePath = "${{ github.workspace }}\tSQLt\Build\output";
           $artifactFiles = (@("Version.txt","tSQLt.zip","tSQLt.tests.zip","tSQLtSnippets(SQLPrompt).zip")| ForEach-Object { $basePath + $_ });
           $artifactFiles | Copy-Item -Verbose -Destination $env:ARTIFACT_DIR;
