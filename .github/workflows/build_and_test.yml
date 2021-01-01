@@ -65,7 +65,7 @@ jobs:
           $compress = @{
             Path = "$env:ARTIFACT_DIR\tSQLtCLR\*.dll"
             CompressionLevel = "Fastest"
-            DestinationPath = "$env:ARTIFACT_DIR\tSQLtCLR.zip"
+            DestinationPath = "${{ github.workspace }}\tSQLt\Build\output\tSQLtCLR.zip"
             }
           Compress-Archive @compress
  
