@@ -133,37 +133,37 @@ jobs:
           Write-Host ("GitHub Action: {0}" -f "${{ github.action }}"); 
           Write-Host ("GitHub Repository: {0}" -f "${{ github.repository }}"); 
           Write-Host ("GitHub SHA: {0}" -f "${{ github.sha }}"); 
+          Write-Host ("GitHub Runner Tracking Id: {0}" -f "$env:RUNNER_TRACKING_ID"); # undocumented
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           echo "namespace=${{ github.run_id }}-${{ github.run_number }}-${{ matrix.mssqlversion }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "namespace1=yellow" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: print echo namespace env variables
         shell: pwsh
         run: |
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          Write-Host ("namespace value: {0}" -f $namespace1); 
           Write-Host ("namespace value: {0}" -f $env:namespace); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Get-ChildItem env:
           
-      # # documentation: https://github.com/azure/login#configure-azure-credentials
-      # # next steps is to set up a service principal in azure which has permission to set up its own resource group and resources within that resource group, but not mess with those that it has not set up.
-      # - name: login via az module
-      #   uses: azure/login@v1
-      #   with:
-      #     creds: ${{secrets.AZ_SP_CREDENTIALS}}
-      #     enable-AzPSSession: true 
+      # documentation: https://github.com/azure/login#configure-azure-credentials
+      # next steps is to set up a service principal in azure which has permission to set up its own resource group and resources within that resource group, but not mess with those that it has not set up.
+      - name: login via az module
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.AZ_SP_CREDENTIALS}}
+          enable-AzPSSession: true 
 
-      # # documentation: https://github.com/Azure/get-keyvault-secrets
-      # - name: get azure secrets
-      #   uses: Azure/get-keyvault-secrets@v1.0
-      #   with:
-      #     keyvault: "sm-52F71DC003"
-      #     secrets: 'azResourceGroupName, aksClusterName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
-      #   id: get-azure-secrets
+      # documentation: https://github.com/Azure/get-keyvault-secrets
+      - name: get azure secrets
+        uses: Azure/get-keyvault-secrets@v1.0
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        with:
+          keyvault: "sm-52F71DC003"
+          secrets: 'azResourceGroupName, aksClusterName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
+        id: get-azure-secrets
 
       # # Set the target AKS cluster.
       # - name: set aks context
