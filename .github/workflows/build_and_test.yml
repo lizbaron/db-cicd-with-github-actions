@@ -62,7 +62,6 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path $env:ARTIFACT_DIR\tSQLtCLR
           Get-Item -Path ${{ github.workspace }}\tSQLt\tSQLtCLR\*\bin\*\* -Filter *.dll | Copy-Item -Destination $env:ARTIFACT_DIR\tSQLtCLR -Container:$false
-          Copy-Item -Path . -Destination $env:ARTIFACT_DIR\tSQLtCLR -Filter */bin/*/*.dll -Recurse -Container:$false
           $compress = @{
             Path = "$env:ARTIFACT_DIR\tSQLtCLR\*.dll"
             CompressionLevel = "Fastest"
