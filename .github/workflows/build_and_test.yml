@@ -79,13 +79,7 @@ jobs:
           $basePath = "${{ github.workspace }}\tSQLt\Build\output\";
           $artifactFiles = (@("Version.txt","tSQLt.zip","tSQLt.tests.zip","tSQLtSnippets(SQLPrompt).zip")| ForEach-Object { $basePath + $_ });
           $artifactFiles | Copy-Item -Verbose -Destination $env:ARTIFACT_DIR;
-          $filesToCompress = ((Get-ChildItem -Path $env:ARTIFACT_DIR -File).FullName | ForEach-Object {"`""+$_+"`""}) -join ", "
-          $compress = @{
-            Path = $filesToCompress
-            CompressionLevel = "Fastest"
-            DestinationPath = "$env:ARTIFACT_DIR\tSQLtAndTests.zip"
-            }
-          Compress-Archive @compress
+          Get-ChildItem -Path $env:ARTIFACT_DIR -File | Compress-Archive -Destination $env:ARTIFACT_DIR\tSQLtAndTests.zip
 
       - name: Archive production artifact
         uses: actions/upload-artifact@v2
