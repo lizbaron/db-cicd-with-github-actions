@@ -73,20 +73,23 @@ jobs:
       - name: ant -debug Build/tSQLt.build.xml
         run: ant -noinput -debug -buildfile ${{ github.workspace }}\tSQLt\Build\tSQLt.build.xml all
 
-      - name: create tSQLt artifact staging and compress to tSQLtCLR.zip
+      - name: copy tSQLt artifacts to ${{ env.artifact_dir }}
         shell: pwsh
         run: |
+          # @SM --> TODO
+          Remove-Item .\artifacts\ -Recurse
+          New-Item -ItemType Directory -Path $env:ARTIFACT_DIR\tSQLtCLR
           $basePath = "${{ github.workspace }}\tSQLt\Build\output\";
           $artifactFiles = (@("Version.txt","tSQLt.zip","tSQLt.tests.zip","tSQLtSnippets(SQLPrompt).zip")| ForEach-Object { $basePath + $_ });
           $artifactFiles | Copy-Item -Verbose -Destination $env:ARTIFACT_DIR;
-          Get-ChildItem -Path $env:ARTIFACT_DIR -File | Compress-Archive -Destination $env:ARTIFACT_DIR\tSQLtAndTests.zip
 
       - name: Archive production artifact
         uses: actions/upload-artifact@v2
         with:
           if-no-files-found: error
           name: tSQLtAndTests
-          path: ${{ env.artifact_dir }}\tSQLtAndTests.zip
+          path: |
+            ${{ env.artifact_dir }}\
 
   test:
     needs: build-tSQLt
