@@ -54,7 +54,7 @@ jobs:
       - name: build tsqltCLR
         shell: pwsh
         run: |
-          cd ${{ github.workspace }}\tSQLtCLR
+          cd ${{ github.workspace }}\tSQLt\tSQLtCLR
           msbuild .\tSQLtCLR.sln -m -p:Configuration=CruiseControl
 
       - name: copy files to artifact staging and compress to tSQLtCLR.zip
