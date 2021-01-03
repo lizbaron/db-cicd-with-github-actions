@@ -110,7 +110,7 @@ jobs:
 
     strategy: 
       matrix:
-        mssqlversion: [mssql2017]
+        mssqlversion: [mssql2017, mssql2019]
 
       # MDP: Fail-Fast-Behavior
       #    : https://github.community/t/why-a-matrix-step-will-be-canceled-if-another-one-failed/16184
