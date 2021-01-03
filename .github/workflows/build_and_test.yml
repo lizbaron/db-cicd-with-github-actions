@@ -131,8 +131,8 @@ jobs:
         run: |
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          Write-Host ("sqlPort min value: {0}" -f $env:SQLPORT_MIN); 
-          Write-Host ("sqlPort max value: {0}" -f $env:SQLPORT_MAX); 
+          Write-Host ("sqlPort min value: {0}" -f ${{ secrets.SQL_PORT_MIN }}); 
+          Write-Host ("sqlPort max value: {0}" -f ${{ secrets.SQL_PORT_MAX }}); 
           $sqlPort = Get-Random -Minimum ${{ secrets.SQL_PORT_MIN }} -Maximum ${{ secrets.SQL_PORT_MAX }}
           Write-Host ("sqlPort value: {0}" -f $sqlPort); 
           Write-Host ("Matrix mssqlversion: {0}" -f "${{ matrix.mssqlversion }}"); 
