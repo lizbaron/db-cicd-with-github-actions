@@ -212,7 +212,7 @@ jobs:
           # @SM --> TODO: template "stuff"
           kubectl apply -f ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
           kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=$env:sqlPort --target-port=1433
-          kubectl wait pod --for=condition=Ready --all --timeout 60s # Expiremental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
+          kubectl wait pod --for=condition=Ready --all --timeout 360s # Experimental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
           $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.items[0].status.loadBalancer.ingress[0].ip}"
 
           # add environment variables
