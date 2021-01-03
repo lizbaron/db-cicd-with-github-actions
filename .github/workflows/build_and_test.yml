@@ -159,87 +159,87 @@ jobs:
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           
-      # # documentation: https://github.com/azure/login#configure-azure-credentials
-      # # next steps is to set up a service principal in azure which has permission to set up its own resource group and resources within that resource group, but not mess with those that it has not set up.
-      # - name: login via az module
-      #   uses: azure/login@v1
-      #   with:
-      #     creds: ${{secrets.AZ_SP_CREDENTIALS}}
-      #     enable-AzPSSession: true 
+      # documentation: https://github.com/azure/login#configure-azure-credentials
+      # next steps is to set up a service principal in azure which has permission to set up its own resource group and resources within that resource group, but not mess with those that it has not set up.
+      - name: login via az module
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.AZ_SP_CREDENTIALS}}
+          enable-AzPSSession: true 
 
-      # # documentation: https://github.com/Azure/get-keyvault-secrets
-      # - name: get azure secrets
-      # # TODO: Consider deleting this task and getting these manually and setting them as secrets.
-      #   uses: Azure/get-keyvault-secrets@v1.0
-      #   env:
-      #     ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
-      #   with:
-      #     keyvault: "sm-52F71DC003"
-      #     secrets: 'azResourceGroupName, aksClusterName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
-      #   id: get-azure-secrets
+      # documentation: https://github.com/Azure/get-keyvault-secrets
+      - name: get azure secrets
+      # TODO: Consider deleting this task and getting these manually and setting them as secrets.
+        uses: Azure/get-keyvault-secrets@v1.0
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
+        with:
+          keyvault: "sm-52F71DC003"
+          secrets: 'azResourceGroupName, aksClusterName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
+        id: get-azure-secrets
 
-      # # Set the target AKS cluster.
-      # - name: set aks context
-      #   uses: Azure/aks-set-context@v1
-      #   with:
-      #     creds: '${{ secrets.AZ_SP_CREDENTIALS }}'
-      #     cluster-name: ${{ steps.get-azure-secrets.outputs.aksClusterName }}
-      #     resource-group: ${{ steps.get-azure-secrets.outputs.azResourceGroupName }}
+      # Set the target AKS cluster.
+      - name: set aks context
+        uses: Azure/aks-set-context@v1
+        with:
+          creds: '${{ secrets.AZ_SP_CREDENTIALS }}'
+          cluster-name: ${{ steps.get-azure-secrets.outputs.aksClusterName }}
+          resource-group: ${{ steps.get-azure-secrets.outputs.azResourceGroupName }}
 
-      # - name: create the aks namespace for this job
-      #   shell: pwsh
-      #   run: |
-      #     # display the values of all the environment variables
-      #     Get-ChildItem Env: | Sort Name
+      - name: create the aks namespace for this job
+        shell: pwsh
+        run: |
+          # display the values of all the environment variables
+          Get-ChildItem Env: | Sort Name
 
-      #     # create the namespace
-      #     kubectl config current-context
-      #     kubectl get namespace
-      #     kubectl create namespace $env:namespace 
-      #     kubectl config set-context --current --namespace=$env:namespace
+          # create the namespace
+          kubectl config current-context
+          kubectl get namespace
+          kubectl create namespace $env:namespace 
+          kubectl config set-context --current --namespace=$env:namespace
 
-      # - name: apply deployments to aks
-      #   shell: pwsh
-      #   run: |
+      - name: apply deployments to aks
+        shell: pwsh
+        run: |
 
-      #     kubectl get namespace
+          kubectl get namespace
 
-      #     kubectl create secret generic myssql-secret --from-literal=sa_password="$env:SA_PASSWORD"
-      #     # @SM --> TODO: change sa_password from default
+          kubectl create secret generic myssql-secret --from-literal=sa_password="$env:SA_PASSWORD"
+          # @SM --> TODO: change sa_password from default
 
-      #     # @SM --> TODO: template "stuff"
-      #     kubectl apply -f ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
-      #     kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=$env:sqlPort --target-port=1433
-      #     kubectl wait pod --for=condition=Ready --all --timeout 60s # Expiremental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
-      #     $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.items[0].status.loadBalancer.ingress[0].ip}"
+          # @SM --> TODO: template "stuff"
+          kubectl apply -f ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
+          kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=$env:sqlPort --target-port=1433
+          kubectl wait pod --for=condition=Ready --all --timeout 60s # Expiremental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
+          $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.items[0].status.loadBalancer.ingress[0].ip}"
 
-      #     # add environment variables
-      #     #---------------------------------------------------------------------------------------------------#
-      #     # IMPORTANT (and, you've got to be kidding me):                                                     #
-      #     # The space between the comma and the sqlPort is absolutely required to make the ANT Task work.     #
-      #     #---------------------------------------------------------------------------------------------------#
-      #     $fqdnAndPort = $ipAddress + ", " + $env:sqlPort;
-      #     #-----------------------------^---------------------------------------------------------------------#
-      #     #-----------------------------^---------------------------------------------------------------------#          
+          # add environment variables
+          #---------------------------------------------------------------------------------------------------#
+          # IMPORTANT (and, you've got to be kidding me):                                                     #
+          # The space between the comma and the sqlPort is absolutely required to make the ANT Task work.     #
+          #---------------------------------------------------------------------------------------------------#
+          $fqdnAndPort = $ipAddress + ", " + $env:sqlPort;
+          #-----------------------------^---------------------------------------------------------------------#
+          #-----------------------------^---------------------------------------------------------------------#          
 
-      #     echo "ipAddress=$ipAddress" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-      #     echo "fqdnAndPort=$fqdnAndPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "ipAddress=$ipAddress" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "fqdnAndPort=$fqdnAndPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      # - name: print sql version info
-      #   shell: pwsh
-      #   run: |
-      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-      #     Write-Host "";
-      #     # @SM --> TODO: Fix the password issue.
-      #     $DS = Invoke-Sqlcmd -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
-      #     $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
-      #     Write-Host "";
-      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      - name: print sql version info
+        shell: pwsh
+        run: |
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          # @SM --> TODO: Fix the password issue.
+          $DS = Invoke-Sqlcmd -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
+          $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
+          Write-Host "";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
-      # # @SM --> TODO: Fix the password issue
-      # # @SM --> TODO: jUnit results
-      # - name: ant -debug Build/tSQLt.validatebuild.xml
-      #   run: ant -noinput -debug -buildfile ${{ github.workspace }}\tSQLt\Build\tSQLt.validatebuild.xml all -Ddb.server="$env:fqdnAndPort" -Ddb.name=tSQLt_dev -Ddb.login="-U sa -P $env:SA_PASSWORD" -Dsqlcmd.path="$env:SQLCMD_PATH"
+      # @SM --> TODO: Fix the password issue
+      # @SM --> TODO: jUnit results
+      - name: ant -debug Build/tSQLt.validatebuild.xml
+        run: ant -noinput -debug -buildfile ${{ github.workspace }}\tSQLt\Build\tSQLt.validatebuild.xml all -Ddb.server="$env:fqdnAndPort" -Ddb.name=tSQLt_dev -Ddb.login="-U sa -P $env:SA_PASSWORD" -Dsqlcmd.path="$env:SQLCMD_PATH"
 
 # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
 
