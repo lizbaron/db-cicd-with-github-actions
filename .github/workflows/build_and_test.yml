@@ -149,7 +149,7 @@ jobs:
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           # k8s namespaces must be no longer than 63 chars https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
-          $sqlcmdPath = (Get-Command sqlcmd).Path -split "\\SQLCMD.EXE";
+          $sqlcmdPath = (Get-Command sqlcmd).Path.TrimEnd("\\SQLCMD.EXE");
           echo "namespace=ns-${{ github.run_id }}-${{ github.run_number }}-${{ matrix.mssqlversion }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append 
           echo "sqlPort=$sqlPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "sqlcmdPath=$sqlcmdPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
@@ -261,6 +261,16 @@ jobs:
         shell: pwsh
         run: |
           kubectl exec service/${{ matrix.mssqlversion }}-service -- powershell.exe -c 'Get-Service MSSQL*'
+
+      - name: print sql version info
+        shell: pwsh
+        run: |
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          &"$sqlcmdPath\sqlcmd" -S "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -Q "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;"
+          Write-Host "";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+
 
       - name: print sql version info
         shell: pwsh
