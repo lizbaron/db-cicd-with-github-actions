@@ -159,15 +159,15 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: tSQLtAndTests
-          path: output
+          path: ${{ github.workspace }}\tSQLt\Build_Artifact
 
       - name: print echo namespace env variables
         shell: pwsh
         run: |
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          Write-Host "Dir output -- ";
-          Get-ChildItem -Path output
+          Write-Host "Dir ${{ github.workspace }}\tSQLt\Build_Artifact -- ";
+          Get-ChildItem -Path ${{ github.workspace }}\tSQLt\Build_Artifact
           Write-Host "";
           Write-Host ("namespace value: {0}" -f $env:namespace); 
           Write-Host ("sqlPort value: {0}" -f $env:sqlPort); 
@@ -226,7 +226,7 @@ jobs:
           # @SM --> TODO: template "stuff"
           kubectl apply -f ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
           kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=$env:sqlPort --target-port=1433
-          kubectl wait pod --for=condition=Ready --all --timeout 360s # Experimental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
+          kubectl wait pod --for=condition=Ready --all --timeout 600s # Experimental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
           $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
 
           # add environment variables
@@ -258,11 +258,18 @@ jobs:
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
 
+      - name: get directory listing
+        shell: pwsh
+        run: |
+          dir -S
+
       # @SM --> TODO: Fix the password issue
       # @SM --> TODO: jUnit results
       # @SM --> TODO: Parameter 'db.server' is required, validate requires files to be in specific places
       - name: ant -debug Build/tSQLt.validatebuild.xml
-        run: ant -noinput -debug -buildfile ${{ github.workspace }}\tSQLt\Build\tSQLt.validatebuild.xml all -Ddb.server="$env:fqdnAndPort" -Ddb.name=tSQLt_dev -Ddb.login="-U sa -P $env:SA_PASSWORD" -Dsqlcmd.path="$env:SQLCMD_PATH"
+        run: ant -noinput -debug -buildfile tSQLt.validatebuild.xml all -Ddb.server="$env:fqdnAndPort" -Ddb.name=tSQLt_dev -Ddb.login="-U sa -P $env:SA_PASSWORD" -Dsqlcmd.path="$env:SQLCMD_PATH"
+        with:
+          path: ${{ github.workspace }}\tSQLt\Build
 
 # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
 
