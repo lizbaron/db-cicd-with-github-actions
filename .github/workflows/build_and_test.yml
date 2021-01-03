@@ -25,10 +25,6 @@ jobs:
       PFX_PATH: ${{ github.workspace }}\tSQLt\Build\tSQLtOfficialSigningKey.pfx
       PFX_PASSWORD: ${{ secrets.PFX_PASSWORD }}
       ARTIFACT_DIR: ${{ github.workspace }}\artifacts
-      SQLPORT_MIN: ${{ secrets.SQL_PORT_MIN }}
-      SQLPORT_MAX: ${{ secrets.SQL_PORT_MAX }}
-      SA_PASSWORD: ${{ secrets.SA_PASSWORD }}
-      SQLCMD_PATH: 'C:\Program Files\Microsoft SQL Server\110\Tools\Binn'
       
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -107,6 +103,12 @@ jobs:
     # Note: [https://kubernetes.io/docs/tasks/tools/install-kubectl/#before-you-begin]
     #     You must use a kubectl version that is within one minor version difference of your cluster. For example, a v1.2 client should work with v1.1, v1.2, and v1.3 master. Using the latest version of kubectl helps avoid unforeseen issues.
     runs-on: windows-latest # Kubectl 1.20
+    env:
+      SQL_PORT_MIN: ${{ secrets.SQL_PORT_MIN }}
+      SQL_PORT_MAX: ${{ secrets.SQL_PORT_MAX }}
+      SA_PASSWORD: ${{ secrets.SA_PASSWORD }}
+      SQLCMD_PATH: 'C:\Program Files\Microsoft SQL Server\110\Tools\Binn'
+
     strategy: 
       matrix:
         mssqlversion: [mssql2017, mssql2019]
@@ -131,9 +133,9 @@ jobs:
         run: |
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          Write-Host ("sqlPort min value: {0}" -f ${{ secrets.SQL_PORT_MIN }}); 
-          Write-Host ("sqlPort max value: {0}" -f ${{ secrets.SQL_PORT_MAX }}); 
-          $sqlPort = Get-Random -Minimum ${{ secrets.SQL_PORT_MIN }} -Maximum ${{ secrets.SQL_PORT_MAX }}
+          Write-Host ("sqlPort min value: {0}" -f $env:SQL_PORT_MIN); 
+          Write-Host ("sqlPort max value: {0}" -f $env:SQL_PORT_MAX); 
+          $sqlPort = Get-Random -Minimum $env:SQL_PORT_MIN -Maximum $env:SQL_PORT_MAX
           Write-Host ("sqlPort value: {0}" -f $sqlPort); 
           Write-Host ("Matrix mssqlversion: {0}" -f "${{ matrix.mssqlversion }}"); 
           Write-Host ("GitHub Run Id: {0}" -f "${{ github.run_id }}"); 
