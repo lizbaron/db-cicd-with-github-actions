@@ -196,6 +196,13 @@ jobs:
         run: |
           # generate a port for the service
           $sqlPort = Get-Random -minimum $env:SQL_PORT_MIN -maximum $env:SQL_PORT_MAX
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          Write-Host ("sqlPort min value: {0}" -f $env:SQL_PORT_MIN); 
+          Write-Host ("sqlPort max value: {0}" -f $env:SQL_PORT_MAX); 
+          Write-Host ("sqlPort value: {0}" -f $sqlPort); 
+          Write-Host "";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
           kubectl get namespace
 
