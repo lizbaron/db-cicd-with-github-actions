@@ -131,6 +131,10 @@ jobs:
         run: |
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
+          Write-Host ("sqlPort min value: {0}" -f $env:SQLPORT_MIN); 
+          Write-Host ("sqlPort max value: {0}" -f $env:SQLPORT_MAX); 
+          $sqlPort = Get-Random -minimum $env:SQLPORT_MIN -maximum $env:SQLPORT_MAX
+          Write-Host ("sqlPort value: {0}" -f $sqlPort); 
           Write-Host ("Matrix mssqlversion: {0}" -f "${{ matrix.mssqlversion }}"); 
           Write-Host ("GitHub Run Id: {0}" -f "${{ github.run_id }}"); 
           Write-Host ("GitHub Run Number: {0}" -f "${{ github.run_number }}"); 
@@ -142,6 +146,8 @@ jobs:
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           # k8s namespaces must be no longer than 63 chars https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
           echo "namespace=ns-${{ github.run_id }}-${{ github.run_number }}-${{ matrix.mssqlversion }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append 
+          echo "sqlPort=$sqlPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
 
       - name: print echo namespace env variables
         shell: pwsh
@@ -194,15 +200,6 @@ jobs:
       - name: apply deployments to aks
         shell: pwsh
         run: |
-          # generate a port for the service
-          $sqlPort = Get-Random -minimum $env:SQLPORT_MIN -maximum $env:SQLPORT_MAX
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Write-Host "";
-          Write-Host ("sqlPort min value: {0}" -f $env:SQLPORT_MIN); 
-          Write-Host ("sqlPort max value: {0}" -f $env:SQLPORT_MAX); 
-          Write-Host ("sqlPort value: {0}" -f $sqlPort); 
-          Write-Host "";
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
           kubectl get namespace
 
@@ -211,7 +208,7 @@ jobs:
 
           # @SM --> TODO: template "stuff"
           kubectl apply -f ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
-          kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=$sqlPort --target-port=1433
+          kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=$env:sqlPort --target-port=1433
           kubectl wait pod --for=condition=Ready --all --timeout 60s # Expiremental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
           $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.items[0].status.loadBalancer.ingress[0].ip}"
 
@@ -220,11 +217,10 @@ jobs:
           # IMPORTANT (and, you've got to be kidding me):                                                     #
           # The space between the comma and the sqlPort is absolutely required to make the ANT Task work.     #
           #---------------------------------------------------------------------------------------------------#
-          $fqdnAndPort = $ipAddress + ", " + $sqlPort;
+          $fqdnAndPort = $ipAddress + ", " + $env:sqlPort;
           #-----------------------------^---------------------------------------------------------------------#
           #-----------------------------^---------------------------------------------------------------------#          
 
-          echo "sqlPort=$sqlPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "ipAddress=$ipAddress" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "fqdnAndPort=$fqdnAndPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
