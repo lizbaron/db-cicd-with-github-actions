@@ -21,7 +21,7 @@ spec:
         image: crn52f71dc003.azurecr.io/mssql2017
         envFrom:
         - secretRef:
-            name: myssql-secret
+            name: mssql-secret
         resources:
           limits:
             cpu: 1
