@@ -1,27 +1,23 @@
-# Documentation
-# - https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/
-# - https://kubernetes.io/docs/tasks/inject-data-application/define-interdependent-environment-variables/
-# - 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mssql2017-deployment
+  name: mssql2019-deployment
   labels:
-    app: mssql2017-db
+    app: mssql2019-db
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mssql2017-db
+      app: mssql2019-db
   template:
     metadata:
       labels:
-        app: mssql2017-db
+        app: mssql2019-db
     spec:
       nodeSelector:
         agentpool: akswin
       containers:
-      - name: mssql2017-db
+      - name: mssql2019-db
         image: crn52f71dc003.azurecr.io/mssql2017
         envFrom:
         - secretRef:
@@ -43,3 +39,4 @@ spec:
           - containerPort: 1433
             name: mssql
             protocol: TCP
+

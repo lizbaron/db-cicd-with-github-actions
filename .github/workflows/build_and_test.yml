@@ -25,6 +25,10 @@ jobs:
       PFX_PATH: ${{ github.workspace }}\tSQLt\Build\tSQLtOfficialSigningKey.pfx
       PFX_PASSWORD: ${{ secrets.PFX_PASSWORD }}
       ARTIFACT_DIR: ${{ github.workspace }}\artifacts
+      SQL_PORT_MIN: ${{ secrets.SQL_PORT_MIN }}
+      SQL_PORT_MAX: ${{ secrets.SQL_PORT_MAX }}
+      SA_PASSWORD: ${{ secrets.SA_PASSWORD }}
+      SQLCMD_PATH: 'C:\Program Files\Microsoft SQL Server\110\Tools\Binn'
       
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -136,7 +140,8 @@ jobs:
           Write-Host ("GitHub Runner Tracking Id: {0}" -f "$env:RUNNER_TRACKING_ID"); # undocumented
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          echo "namespace=${{ github.run_id }}-${{ github.run_number }}-${{ matrix.mssqlversion }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          # k8s namespaces must be no longer than 63 chars https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
+          echo "namespace=ns-${{ github.run_id }}-${{ github.run_number }}-${{ matrix.mssqlversion }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append 
 
       - name: print echo namespace env variables
         shell: pwsh
@@ -157,9 +162,10 @@ jobs:
 
       # documentation: https://github.com/Azure/get-keyvault-secrets
       - name: get azure secrets
+      # TODO: Consider deleting this task and getting these manually and setting them as secrets.
         uses: Azure/get-keyvault-secrets@v1.0
         env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
         with:
           keyvault: "sm-52F71DC003"
           secrets: 'azResourceGroupName, aksClusterName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
@@ -176,76 +182,68 @@ jobs:
       - name: create the aks namespace for this job
         shell: pwsh
         run: |
+          # display the values of all the environment variables
+          Get-ChildItem Env: | Sort Name
+
+          # create the namespace
+          kubectl config current-context
           kubectl get namespace
-          kubectl create namespace ns-${{ github.run_id }}-${{ github.run_number }}-${{ matrix.mssqlversion }} # must be no longer than 63 chars https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
+          kubectl create namespace $env:namespace 
+          kubectl config set-context --current --namespace=$env:namespace
+
+      - name: apply deployments to aks
+        shell: pwsh
+        run: |
+          # generate a port for the service
+          $sqlPort = Get-Random -minimum $env:SQL_PORT_MIN -maximum $env:SQL_PORT_MAX
+
+          kubectl get namespace
+
+          kubectl create secret generic myssql-secret --from-literal=sa_password="$env:SA_PASSWORD"
+          # @SM --> TODO: change sa_password from default
+
+          # @SM --> TODO: template "stuff"
+          kubectl apply -f ${{ matrix.mssqlversion }}.deployment.yml
+          kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=$sqlPort --target-port=1433
+          kubectl wait pod --for=condition=Ready --all --timeout 60s # Expiremental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
+          $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.items[0].status.loadBalancer.ingress[0].ip}"
+
+          # add environment variables
+          #---------------------------------------------------------------------------------------------------#
+          # IMPORTANT (and, you've got to be kidding me):                                                     #
+          # The space between the comma and the sqlPort is absolutely required to make the ANT Task work.     #
+          #---------------------------------------------------------------------------------------------------#
+          $fqdnAndPort = $ipAddress + ", " + $sqlPort;
+          #-----------------------------^---------------------------------------------------------------------#
+          #-----------------------------^---------------------------------------------------------------------#          
+
+          echo "sqlPort=$sqlPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "ipAddress=$ipAddress" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "fqdnAndPort=$fqdnAndPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: print sql version info
+        shell: pwsh
+        run: |
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          # @SM --> TODO: Fix the password issue.
+          $DS = Invoke-Sqlcmd -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
+          $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
+          Write-Host "";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+
+      # @SM --> TODO: Fix the password issue
+      # @SM --> TODO: jUnit results
+      - name: ant -debug Build/tSQLt.validatebuild.xml
+        run: ant -noinput -debug -buildfile ${{ github.workspace }}\tSQLt\Build\tSQLt.validatebuild.xml all -Ddb.server="$env:fqdnAndPort" -Ddb.name=tSQLt_dev -Ddb.login="-U sa -P $env:SA_PASSWORD" -Dsqlcmd.path="$env:SQLCMD_PATH"
 
 # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
 
 
-      # # documentation: https://github.com/Azure/PowerShell
-      # - name: run azure powershell script
-      #   uses: azure/powershell@v1
-      #   with:
-      #     azPSVersion: 'latest'
-      #     errorActionPreference: 'continue'
-      #     inlineScript: |
-
-
-      
-      # # documentation: https://github.com/Azure/k8s-create-secret
-      # - name: Set imagePullSecret 
-      #   uses: azure/k8s-create-secret@v1
-      #   with:
-      #     namespace: 'myapp'
-      #     container-registry-url: 'containerregistry.contoso.com'
-      #     container-registry-username: ${{ secrets.REGISTRY_USERNAME }}
-      #     container-registry-password: ${{ secrets.REGISTRY_PASSWORD }}
-      #     secret-name: 'contoso-cr'
-      #   id: create-secret
-
-      # - name: deploy to aks
-      #   uses: Azure/k8s-deploy@v1.3
-      #   with:
-      #     namespace: 'myapp'
-      #     manifests: |
-      #         deployment.yaml
-      #         service.yaml
-      #     images: 'contoso.azurecr.io/myapp:${{ event.run_id }}'
-      #     imagepullsecrets: |
-      #       image-pull-secret1
-      #       image-pull-secret2
-      #     kubectl-version: 'latest'
 
 
 # >>>>>>>>>>>> START HERE <<<<<<<<<<<<<<
-      
-    # - task: PowerShell@2
-    #   name: GetVariablesInPlace
-    #   inputs:
-    #     targetType: 'inline'
-    #     script: |
-    #       Write-Host '$(CreateVMAndMore.SerializedDTLDetails)';
-    #       $DTLDetails = (ConvertFrom-JSON '$(CreateVMAndMore.SerializedDTLDetails)');
-    #       #-----------------------------------------------------------------------#
-    #       # IMPORTANT (and, you've got to be kidding me):                         #
-    #       # The space below is absolutely required to make the ANT Task work.     #
-    #       #--------------------------------------|--------------------------------#
-    #       $FQDNAndPort = $DTLDetails.SQLVmFQDN+", "+$DTLDetails.SQLVmPort;
-    #       #--------------------------------------|--------------------------------#
-    #       #-----------------------------------------------------------------------#
-    #       $SQLVersion = $DTLDetails.SQLVersion;
-    #       Write-Host "##vso[task.setvariable variable=FQDNAndPort]$FQDNAndPort"
-    #       Write-Host "##vso[task.setvariable variable=SQLVersion]$SQLVersion"
-    # - task: PowerShell@2
-    #   name: PrintSQLVersionInfo
-    #   env:
-    #     USER_NAME: $(tSQLt-UserForCIEnvironment-UserName)
-    #     PASSWORD: $(tSQLt-UserForCIEnvironment-Password)
-    #   inputs:
-    #     targetType: 'inline'
-    #     script: |
-    #       $DS = Invoke-Sqlcmd -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$(FQDNAndPort)" -Username "$env:USER_NAME" -Password "$env:PASSWORD" -As DataSet
-    #       $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
+
     
     # - task: Ant@1
     #   name: Run_tSQLt_validatebuild_xml
@@ -280,6 +278,7 @@ jobs:
     #       (Get-ChildItem $BasePath -recurse -include "*TestResults*.xml").FullName|Copy-Item -Destination $ArtifactPath -recurse -PassThru
     #       Set-Content -Path ($ArtifactPath+"CommitId.txt") -Value "$(Build.SourceVersion)"
     #       "=== === === === === === === === === === === === ==="
+    #
     # - task: PublishPipelineArtifact@1
     #   name: PublishTestResultArtifact
     #   inputs:
