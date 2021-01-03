@@ -281,7 +281,7 @@ jobs:
       # @SM --> TODO: Parameter 'db.server' is required, validate requires files to be in specific places
       - name: ant -debug Build/tSQLt.validatebuild.xml
         working-directory: ${{ github.workspace }}\tSQLt\Build
-        run: ant -noinput -debug -buildfile tSQLt.validatebuild.xml all -Ddb\.server="$env:fqdnAndPort" -Ddb.name=tSQLt_dev -Ddb.login="-U sa -P $env:SA_PASSWORD" -Dsqlcmd.path="$env:SQLCMD_PATH"
+        run: ant -noinput -debug -buildfile tSQLt.validatebuild.xml all -D"db.server"="$env:fqdnAndPort" -D"db.name"=tSQLt_dev -D"db.login"="-U sa -P $env:SA_PASSWORD" -D"sqlcmd.path"="$env:SQLCMD_PATH"
 
 
 # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
