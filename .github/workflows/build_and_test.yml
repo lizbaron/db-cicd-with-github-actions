@@ -230,7 +230,7 @@ jobs:
           kubectl get services ${{ matrix.mssqlversion }}-service -o json
           
           # If the endpoint doesn't exist yet, with an ip address, the service is not ready (https://stackoverflow.com/questions/59713279/how-to-know-when-a-kubernetes-service-is-ready-after-a-deployment-rollout)
-          Start-Sleep -s 20
+          Start-Sleep -s 30
           $endPointIpAddress = kubectl get endpoints -o jsonpath="{.items[0].subsets[0].addresses[0].ip}"
           $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
 
@@ -261,16 +261,6 @@ jobs:
         shell: pwsh
         run: |
           kubectl exec service/${{ matrix.mssqlversion }}-service -- powershell.exe -c 'Get-Service MSSQL*'
-
-      - name: print sql version info
-        shell: pwsh
-        run: |
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Write-Host "";
-          &"$sqlcmdPath\sqlcmd" -S "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -Q "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;"
-          Write-Host "";
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-
 
       - name: print sql version info
         shell: pwsh
