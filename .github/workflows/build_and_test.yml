@@ -246,22 +246,34 @@ jobs:
           echo "ipAddress=$ipAddress" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "fqdnAndPort=$fqdnAndPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
+      - name: check sql server instance
+        shell: pwsh
+        run: |
+          kubectl exec -- powershell.exe -c 'Get-Service MSSQL*'
+
+      - name: get directory listing
+        shell: pwsh
+        run: |
+          dir -S
+
+      - name: check sql server instance
+        shell: pwsh
+        run: |
+          kubectl exec -- powershell.exe -c 'Get-Service MSSQL*'
+
       - name: print sql version info
         shell: pwsh
         run: |
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           # @SM --> TODO: Fix the password issue.
+          Write-Host Invoke-Sqlcmd -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
           $DS = Invoke-Sqlcmd -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
+
           $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
-
-      - name: get directory listing
-        shell: pwsh
-        run: |
-          dir -S
 
       # @SM --> TODO: Fix the password issue
       # @SM --> TODO: jUnit results
