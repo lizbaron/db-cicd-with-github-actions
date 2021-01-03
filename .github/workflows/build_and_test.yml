@@ -25,8 +25,8 @@ jobs:
       PFX_PATH: ${{ github.workspace }}\tSQLt\Build\tSQLtOfficialSigningKey.pfx
       PFX_PASSWORD: ${{ secrets.PFX_PASSWORD }}
       ARTIFACT_DIR: ${{ github.workspace }}\artifacts
-      SQL_PORT_MIN: ${{ secrets.SQL_PORT_MIN }}
-      SQL_PORT_MAX: ${{ secrets.SQL_PORT_MAX }}
+      SQLPORT_MIN: ${{ secrets.SQL_PORT_MIN }}
+      SQLPORT_MAX: ${{ secrets.SQL_PORT_MAX }}
       SA_PASSWORD: ${{ secrets.SA_PASSWORD }}
       SQLCMD_PATH: 'C:\Program Files\Microsoft SQL Server\110\Tools\Binn'
       
@@ -195,11 +195,11 @@ jobs:
         shell: pwsh
         run: |
           # generate a port for the service
-          $sqlPort = Get-Random -minimum $env:SQL_PORT_MIN -maximum $env:SQL_PORT_MAX
+          $sqlPort = Get-Random -minimum $env:SQLPORT_MIN -maximum $env:SQLPORT_MAX
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          Write-Host ("sqlPort min value: {0}" -f $env:SQL_PORT_MIN); 
-          Write-Host ("sqlPort max value: {0}" -f $env:SQL_PORT_MAX); 
+          Write-Host ("sqlPort min value: {0}" -f $env:SQLPORT_MIN); 
+          Write-Host ("sqlPort max value: {0}" -f $env:SQLPORT_MAX); 
           Write-Host ("sqlPort value: {0}" -f $sqlPort); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
