@@ -278,9 +278,9 @@ jobs:
 
       # @SM --> TODO: Fix the password issue
       # @SM --> TODO: jUnit results
-      - name: ant -debug Build/tSQLt.validatebuild.xml
+      - name: ant Build/tSQLt.validatebuild.xml
         working-directory: ${{ github.workspace }}\tSQLt\Build
-        run: ant -noinput -debug -buildfile tSQLt.validatebuild.xml all -D"db.server"="$env:fqdnAndPort" -D"db.name"=tSQLt_dev -D"db.login"="-U sa -P $env:SA_PASSWORD" -D"sqlcmd.path"="$env:sqlcmdPath"
+        run: ant -buildfile tSQLt.validatebuild.xml all -D"db.server"="$env:fqdnAndPort" -D"db.name"=tSQLt_dev -D"db.login"="-U sa -P $env:SA_PASSWORD" -D"sqlcmd.path"="$env:sqlcmdPath"
 
 
 # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
