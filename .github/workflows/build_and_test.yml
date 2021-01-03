@@ -227,6 +227,7 @@ jobs:
           kubectl apply -f ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
           kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=$env:sqlPort --target-port=1433
           kubectl wait pod --for=condition=Ready --all --timeout 600s # Experimental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
+          kubectl get services ${{ matrix.mssqlversion }}-service -o json
           $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
 
           # add environment variables
@@ -280,7 +281,7 @@ jobs:
       # @SM --> TODO: Parameter 'db.server' is required, validate requires files to be in specific places
       - name: ant -debug Build/tSQLt.validatebuild.xml
         working-directory: ${{ github.workspace }}\tSQLt\Build
-        run: ant -noinput -debug -buildfile tSQLt.validatebuild.xml all -Ddb.server="$env:fqdnAndPort" -Ddb.name=tSQLt_dev -Ddb.login="-U sa -P $env:SA_PASSWORD" -Dsqlcmd.path="$env:SQLCMD_PATH"
+        run: ant -noinput -debug -buildfile tSQLt.validatebuild.xml all -Ddb\.server="$env:fqdnAndPort" -Ddb.name=tSQLt_dev -Ddb.login="-U sa -P $env:SA_PASSWORD" -Dsqlcmd.path="$env:SQLCMD_PATH"
 
 
 # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
