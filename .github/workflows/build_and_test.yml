@@ -249,7 +249,7 @@ jobs:
       - name: check sql server instance
         shell: pwsh
         run: |
-          kubectl exec ${{ matrix.mssqlversion }}-deployment -- powershell.exe -c 'Get-Service MSSQL*'
+          kubectl exec service/${{ matrix.mssqlversion }}-service -- powershell.exe -c 'Get-Service MSSQL*'
 
       - name: get directory listing
         shell: pwsh
@@ -259,7 +259,7 @@ jobs:
       - name: check sql server instance
         shell: pwsh
         run: |
-          kubectl exec ${{ matrix.mssqlversion }}-deployment -- powershell.exe -c 'Get-Service MSSQL*'
+          kubectl exec service/${{ matrix.mssqlversion }}-service -- powershell.exe -c 'Get-Service MSSQL*'
 
       - name: print sql version info
         shell: pwsh
