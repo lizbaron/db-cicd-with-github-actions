@@ -133,7 +133,7 @@ jobs:
           Write-Host "";
           Write-Host ("sqlPort min value: {0}" -f $env:SQLPORT_MIN); 
           Write-Host ("sqlPort max value: {0}" -f $env:SQLPORT_MAX); 
-          $sqlPort = Get-Random -minimum $env:SQLPORT_MIN -maximum $env:SQLPORT_MAX
+          $sqlPort = Get-Random -Minimum ${{ secrets.SQL_PORT_MIN }} -Maximum ${{ secrets.SQL_PORT_MAX }}
           Write-Host ("sqlPort value: {0}" -f $sqlPort); 
           Write-Host ("Matrix mssqlversion: {0}" -f "${{ matrix.mssqlversion }}"); 
           Write-Host ("GitHub Run Id: {0}" -f "${{ github.run_id }}"); 
@@ -155,6 +155,7 @@ jobs:
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           Write-Host ("namespace value: {0}" -f $env:namespace); 
+          Write-Host ("sqlPort value: {0}" -f $env:sqlPort); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           
