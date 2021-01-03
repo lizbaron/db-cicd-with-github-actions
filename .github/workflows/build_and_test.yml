@@ -213,7 +213,7 @@ jobs:
           kubectl apply -f ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
           kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=$env:sqlPort --target-port=1433
           kubectl wait pod --for=condition=Ready --all --timeout 360s # Experimental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
-          $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.items[0].status.loadBalancer.ingress[0].ip}"
+          $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
 
           # add environment variables
           #---------------------------------------------------------------------------------------------------#
@@ -222,7 +222,12 @@ jobs:
           #---------------------------------------------------------------------------------------------------#
           $fqdnAndPort = $ipAddress + ", " + $env:sqlPort;
           #-----------------------------^---------------------------------------------------------------------#
-          #-----------------------------^---------------------------------------------------------------------#          
+          #-----------------------------^---------------------------------------------------------------------#
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          Write-Host ("fqdnAndPort value: {0}" -f $fqdnAndPort); 
+          Write-Host "";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
           echo "ipAddress=$ipAddress" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "fqdnAndPort=$fqdnAndPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
