@@ -13,28 +13,35 @@ on:
         description: 'Project Name'     
         required: true
         default: 'db-cicd-with-github-actions'
+      linuxNodePoolDefaultVMSize:
+        description: 'Linux Node Pool Default VM Size'     
+        required: true
+        default: 'Standard_D1_v2'
+      windowsNodePoolDefaultVMSize:
+        description: 'Windows Node Pool Default VM Size'     
+        required: true
+        default: 'Standard_D3_v2'
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     name: Setup Azure Environment
     runs-on: ubuntu-latest
 
     env:
       PROJECT_NAME: ${{ github.event.inputs.projectName }}
-      # TODO, generalize the pipeline by allowing the fetch of credentials based on project name a la ${{ join(['secrets.AZ_SP_CRED_',github.event.inputs.projectName],''}}
+      LINUX_NODEPOOL_DEFAULT_VM_SIZE: ${{ github.event.inputs.linuxNodePoolDefaultVMSize }}
+      WINDOWS_NODEPOOL_DEFAULT_VM_SIZE: ${{ github.event.inputs.windowsNodePoolDefaultVMSize }}
+      # TODO: generalize the pipeline by allowing the fetch of credentials based on project name a la ${{ join(['secrets.AZ_SP_CRED_',github.event.inputs.projectName],''}}
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets.AZ_SP_CREDENTIALS }}
       SSH_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
       # documentation: https://github.com/azure/login#configure-azure-credentials
-      # next steps is to set up a service principal in azure which has permission to set up its own resource group and resources within that resource group, but not mess with those that it has not set up.
+      # TODO: set up a service principal which has permission only on the resource group and associated resources it creates
+      # MDP: This task can be replaced with Connect-AzAccount via service principal (https://docs.microsoft.com/en-us/powershell/azure/authenticate-azureps?view=azps-5.3.0). However for most pipelines, which would use azure powershell more than once, this is an anti-pattern.
+      # TODO: measure difference in performance between using this task and Connect-AzAccount in the next task
       - name: login via az module
         uses: azure/login@v1
         with:
@@ -52,6 +59,8 @@ jobs:
               projectName = "$env:PROJECT_NAME";
               azServicePrincipalCredentials = "$env:AZ_SERVICE_PRINCIPAL_CREDENTIALS";
               sshPassphrase = "$env:SSH_PASSPHRASE";
+              linuxNodePoolDefaultVMSize = "$env:LINUX_NODEPOOL_DEFAULT_VM_SIZE"
+              windowsNodePoolDefaultVMSize = "$env:WINDOWS_NODEPOOL_DEFAULT_VM_SIZE"
               debugOn = $true;
             }; 
             ./envSetup/setup.ps1 @Parameters; 

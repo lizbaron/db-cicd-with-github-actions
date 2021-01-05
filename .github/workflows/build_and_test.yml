@@ -9,6 +9,11 @@ name: CI Build and Test
 # Controls when the action will run. 
 on:
   workflow_dispatch: 
+    inputs:
+      projectName:
+        description: 'Project Name'     
+        required: true
+        default: 'db-cicd-with-github-actions'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -26,9 +31,9 @@ jobs:
       PFX_PASSWORD: ${{ secrets.PFX_PASSWORD }}
       ARTIFACT_DIR: ${{ github.workspace }}\artifacts
       
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it. But this is misleading, because this variable is only really helpful as ${{ github.workspace }}
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it. 
+      # But this is misleading, because this variable is only really helpful as ${{ github.workspace }}
       - name: Checkout self
         uses: actions/checkout@v2
         with:
@@ -40,8 +45,9 @@ jobs:
           repository: tSQLt-org/tSQLt
           path: tSQLt
           token: ${{ secrets.my_pat }}
+          # Why do we need a token here? It's a public repository.
 
-      # documentation: 
+      # documentation: This is just what you need to do...
       - name: create and install unofficial pfx file for signing dlls
         shell: pwsh
         run: |
@@ -72,15 +78,14 @@ jobs:
             }
           Compress-Archive @compress
  
-      - name: ant -debug Build/tSQLt.build.xml
-        run: ant -noinput -debug -buildfile ${{ github.workspace }}\tSQLt\Build\tSQLt.build.xml all
+      - name: ant Build/tSQLt.build.xml
+        run: ant -buildfile ${{ github.workspace }}\tSQLt\Build\tSQLt.build.xml all
 
       - name: copy tSQLt artifacts to ${{ env.artifact_dir }}
         shell: pwsh
         run: |
-          # @SM --> TODO
-          Remove-Item .\artifacts\ -Recurse
-          New-Item -ItemType Directory -Path $env:ARTIFACT_DIR\tSQLtCLR
+          Remove-Item $env:ARTIFACT_DIR -Recurse
+          New-Item -ItemType Directory -Path $env:ARTIFACT_DIR
           $basePath = "${{ github.workspace }}\tSQLt\Build\output\";
           $artifactFiles = (@("Version.txt","tSQLt.zip","tSQLt.tests.zip","tSQLtSnippets(SQLPrompt).zip")| ForEach-Object { $basePath + $_ });
           $artifactFiles | Copy-Item -Verbose -Destination $env:ARTIFACT_DIR;
@@ -93,17 +98,18 @@ jobs:
           path: |
             ${{ env.artifact_dir }}\
 
+#-##-###-#####-########-#############-#####################-#################################
+
   test:
     needs: build-tSQLt
     name: test build artifacts
-    # TODO: Remove this always nonsense
-    if: ${{ always() }}
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
     # Note: [https://kubernetes.io/docs/tasks/tools/install-kubectl/#before-you-begin]
     #     You must use a kubectl version that is within one minor version difference of your cluster. For example, a v1.2 client should work with v1.1, v1.2, and v1.3 master. Using the latest version of kubectl helps avoid unforeseen issues.
     runs-on: windows-latest # Kubectl 1.20
     env:
+      PROJECT_NAME: ${{ github.event.inputs.projectName }}
       SQL_PORT_MIN: ${{ secrets.SQL_PORT_MIN }}
       SQL_PORT_MAX: ${{ secrets.SQL_PORT_MAX }}
       SA_PASSWORD: ${{ secrets.SA_PASSWORD }}
@@ -131,21 +137,22 @@ jobs:
           path: tSQLt
           token: ${{ secrets.my_pat }}
 
-      - name: print matrix variables
+      - name: print variables
         shell: pwsh
         run: |
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          # TODO: ensure that ports do not collide between namespaces
           $sqlPort = Get-Random -Minimum $env:SQL_PORT_MIN -Maximum $env:SQL_PORT_MAX
           Write-Host ("sqlPort value: {0}" -f $sqlPort); 
+
+          $projectNameHash = (Get-MD5HashOfString($projectName)).Substring(0,10);
+          $azSecretsManagerName = "sm-" + $projectNameHash;
+
+          Write-Host ("azSecretsManagerName: {0}" -f "$azSecretsManagerName"); 
+
           Write-Host ("Matrix mssqlversion: {0}" -f "${{ matrix.mssqlversion }}"); 
           Write-Host ("GitHub Run Id: {0}" -f "${{ github.run_id }}"); 
           Write-Host ("GitHub Run Number: {0}" -f "${{ github.run_number }}"); 
-          Write-Host ("GitHub Action: {0}" -f "${{ github.action }}"); 
-          Write-Host ("GitHub Repository: {0}" -f "${{ github.repository }}"); 
-          Write-Host ("GitHub SHA: {0}" -f "${{ github.sha }}"); 
-          Write-Host ("GitHub Runner Tracking Id: {0}" -f "$env:RUNNER_TRACKING_ID"); # undocumented
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           # k8s namespaces must be no longer than 63 chars https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
@@ -153,15 +160,15 @@ jobs:
           echo "namespace=ns-${{ github.run_id }}-${{ github.run_number }}-${{ matrix.mssqlversion }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append 
           echo "sqlPort=$sqlPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "sqlcmdPath=$sqlcmdPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "azSecretsManagerName=$azSecretsManagerName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-          
       - name: download tSQLtAndTests artifact
         uses: actions/download-artifact@v2
         with:
           name: tSQLtAndTests
           path: ${{ github.workspace }}\tSQLt\Build_Artifact
 
-      - name: print echo namespace env variables
+      - name: print more env variables
         shell: pwsh
         run: |
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
@@ -175,7 +182,6 @@ jobs:
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           
       # documentation: https://github.com/azure/login#configure-azure-credentials
-      # next steps is to set up a service principal in azure which has permission to set up its own resource group and resources within that resource group, but not mess with those that it has not set up.
       - name: login via az module
         uses: azure/login@v1
         with:
@@ -189,7 +195,7 @@ jobs:
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
         with:
-          keyvault: "sm-52F71DC003"
+          keyvault: ${{ env.azSecretsManagerName }}
           secrets: 'azResourceGroupName, aksClusterName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
         id: get-azure-secrets
 
@@ -212,6 +218,7 @@ jobs:
           kubectl config current-context
           kubectl get namespace
           kubectl create namespace $env:namespace 
+          # MDP: set the namespace for kubectl so that you don't have to specify the namespace in all kubectl calls
           kubectl config set-context --current --namespace=$env:namespace
 
       - name: apply deployments to aks
@@ -230,7 +237,6 @@ jobs:
           kubectl get services ${{ matrix.mssqlversion }}-service -o json
           
           # If the endpoint doesn't exist yet, with an ip address, the service is not ready (https://stackoverflow.com/questions/59713279/how-to-know-when-a-kubernetes-service-is-ready-after-a-deployment-rollout)
-          Start-Sleep -s 30
           $endPointIpAddress = kubectl get endpoints -o jsonpath="{.items[0].subsets[0].addresses[0].ip}"
           $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
 
@@ -265,6 +271,8 @@ jobs:
       - name: print sql version info
         shell: pwsh
         run: |
+          # TODO: This will randomly fail based on how quickly the k8s endpoint and service are ready for use. Sometimes it is very quickly and sometimes not.
+          # We need to make Invoke-Sqlcmd retry the login if it fails.
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           # @SM --> TODO: Fix the password issue.

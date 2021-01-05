@@ -32,7 +32,7 @@ az provider register --namespace 'Microsoft.Kubernetes'
 ```
 
 ## Azure
-This is probably two separate pipelines: one to set up the environment, and one to run the CI/CD pipelines.
+This is two separate pipelines: one to set up the environment, and one to run the CI/CD pipelines.
 
 ### Environment Setup Steps
 #### Variables
@@ -88,6 +88,8 @@ New-AzContainerRegistry -ResourceGroupName "$resourceGroupName" -Name "$containe
 ```
 
 #### Setup AKS (https://docs.microsoft.com/en-us/azure/aks/windows-container-powershell)
+To make this less cost prohibitive, turn on the startstoppreview feature. (https://docs.microsoft.com/en-us/azure/aks/start-stop-cluster)
+
 ##### Docs - Windows Node Pool
 - https://docs.microsoft.com/en-us/azure/aks/windows-container-cli
 - https://docs.microsoft.com/en-us/azure/aks/windows-container-powershell

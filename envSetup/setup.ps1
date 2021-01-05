@@ -2,6 +2,8 @@ Param(
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $projectName,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $azServicePrincipalCredentials,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $sshPassphrase,
+    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $linuxNodePoolDefaultVMSize,
+    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $windowsNodePoolDefaultVMSize,
     [Parameter(Mandatory=$false)][Switch] $debugOn
 );
 
@@ -69,6 +71,8 @@ $azServicePrincipalObjectId = (Get-AzADServicePrincipal -ApplicationId $azServic
 # This fails miserably if there exists a AKV soft-deleted in the same region with the same name. I don't see a way to turn off soft-delete. So if one exists, it requires manual intervention. Turns out that the minimim SoftDeleteRetentionInDays is the magic number 7.
 New-AzKeyVault -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -Location "$region" -SoftDeleteRetentionInDays 7
 
+# TODO: 
+
 # The Azure Key Vault RBAC is two separate levels, management and data. The Contributor role assigned above to the azure service principal as part of manualPrep.ps1 is for the management level. Additional permissions are required to manipulate the data level. (https://docs.microsoft.com/en-us/azure/key-vault/general/overview-security)
 Set-AzKeyVaultAccessPolicy -VaultName "$azSecretsManagerName" -ResourceGroupName "$azResourceGroupName" -ObjectId $azServicePrincipalObjectId -PermissionsToSecrets Get,Set
 
@@ -107,7 +111,7 @@ Set-Content -Path ~/.azure/acsServicePrincipal.json -Value $fileContent;
 
 # Create a new AKS Cluster with a single linux node
 # TODO: Figure out if we can create a .json file for the service principal a la https://github.com/Azu re/azure-powershell/issues/13012 
-New-AzAksCluster -Force -ServicePrincipalIdAndSecret $azServicePrincipalCreds -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword -KubernetesVersion "1.19.3" -NodeVmSize Standard_A2_v2 -AcrNameToAttach $containerRegistryName;
+New-AzAksCluster -Force -ServicePrincipalIdAndSecret $azServicePrincipalCreds -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword -KubernetesVersion "1.19.3" -NodeVmSize $linuxNodePoolDefaultVMSize -AcrNameToAttach $containerRegistryName;
 
 # Add a Windows Server node pool to our existing cluster
-New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName" -VMSetType VirtualMachineScaleSets -Count 1 -KubernetesVersion "1.19.3" -VmSize Standard_D1_v2;
+New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName" -VMSetType VirtualMachineScaleSets -Count 1 -KubernetesVersion "1.19.3" -VmSize $windowsNodePoolDefaultVMSize;
