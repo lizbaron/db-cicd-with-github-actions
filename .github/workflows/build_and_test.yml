@@ -157,7 +157,7 @@ jobs:
 
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          Write-Host ("projectName value: {0}" -f $env:projectName); 
+          Write-Host ("projectName value: {0}" -f $env:PROJECT_NAME);
           Write-Host ("sqlPort value: {0}" -f $sqlPort); 
           Write-Host ("azSecretsManagerName: {0}" -f "$azSecretsManagerName"); 
           Write-Host ("Matrix mssqlversion: {0}" -f "${{ matrix.mssqlversion }}"); 
@@ -232,10 +232,9 @@ jobs:
           # MDP: set the namespace for kubectl so that you don't have to specify the namespace in all kubectl calls
           kubectl config set-context --current --namespace=$env:namespace
 
-      - name: apply deployments to aks
+      - name: apply deployment to aks
         shell: pwsh
         run: |
-
           kubectl get namespace
 
           kubectl create secret generic mssql-secret --from-literal=sa_password="$env:SA_PASSWORD"
@@ -245,11 +244,18 @@ jobs:
           kubectl apply -f ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
           kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=$env:sqlPort --target-port=1433
           kubectl wait pod --for=condition=Ready --all --timeout 600s # Experimental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
-          kubectl get services ${{ matrix.mssqlversion }}-service -o json
           
-          # If the endpoint doesn't exist yet, with an ip address, the service is not ready (https://stackoverflow.com/questions/59713279/how-to-know-when-a-kubernetes-service-is-ready-after-a-deployment-rollout)
-          $endPointIpAddress = kubectl get endpoints -o jsonpath="{.items[0].subsets[0].addresses[0].ip}"
+      - name: check service
+        shell: pwsh
+        timeout-minutes: 3
+        run: |
           $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
+
+          while ([String]::IsNullOrWhiteSpace($ipAddress))
+          {
+            Start-Sleep -Seconds 10
+            $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
+          }
 
           # add environment variables
           #---------------------------------------------------------------------------------------------------#
@@ -259,25 +265,25 @@ jobs:
           $fqdnAndPort = $ipAddress + ", " + $env:sqlPort;
           #-----------------------------^---------------------------------------------------------------------#
           #-----------------------------^---------------------------------------------------------------------#
+
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          Write-Host ("endPointIpAddress value: {0}" -f $endPointIpAddress); 
           Write-Host ("fqdnAndPort value: {0}" -f $fqdnAndPort); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-
-          echo "ipAddress=$ipAddress" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "fqdnAndPort=$fqdnAndPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
-      - name: get directory listing
-        shell: pwsh
-        run: |
-          dir -S
 
       - name: check sql server instance
         shell: pwsh
         run: |
           kubectl exec service/${{ matrix.mssqlversion }}-service -- powershell.exe -c 'Get-Service MSSQL*'
+          Write-Host "";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          Write-Host "SQL Server Info";
+          kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -Q "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;"
+          Write-Host "";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
       - name: print sql version info
         shell: pwsh
@@ -287,8 +293,8 @@ jobs:
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           # @SM --> TODO: Fix the password issue.
-          Write-Host Invoke-Sqlcmd -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
-          $DS = Invoke-Sqlcmd -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
+          Write-Host Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
+          $DS = Invoke-Sqlcmd -Query -ConnectionTimeout 600 "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
 
           $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
           Write-Host "";
