@@ -331,7 +331,7 @@ jobs:
           if-no-files-found: error
           name: jUnitTests-${{ matrix.mssqlversion }}
           path: |
-            ${{ env.test.artifact_dir }}\
+            ${{ env.test_artifact_dir }}\
 
 # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
 ##--##--##--##--##--##--##--##--##--##---##--##--##--##--##--##--##--##--##--##
