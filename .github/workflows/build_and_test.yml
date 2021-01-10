@@ -140,21 +140,31 @@ jobs:
       - name: print variables
         shell: pwsh
         run: |
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Write-Host "";
-          $sqlPort = Get-Random -Minimum $env:SQL_PORT_MIN -Maximum $env:SQL_PORT_MAX
-          Write-Host ("sqlPort value: {0}" -f $sqlPort); 
+          function Get-MD5HashOfString($string) {
+              $stringAsStream = [System.IO.MemoryStream]::new();
+              $writer = [System.IO.StreamWriter]::new($stringAsStream);
+              $writer.write($string);
+              $writer.Flush();
+              $stringAsStream.Position = 0;
+              $hashedString = (Get-FileHash -InputStream $stringAsStream).Hash;
+              return [String]$hashedString;
+          }
 
           $projectNameHash = (Get-MD5HashOfString($projectName)).Substring(0,10);
           $azSecretsManagerName = "sm-" + $projectNameHash;
 
-          Write-Host ("azSecretsManagerName: {0}" -f "$azSecretsManagerName"); 
+          $sqlPort = Get-Random -Minimum $env:SQL_PORT_MIN -Maximum $env:SQL_PORT_MAX
 
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          Write-Host ("sqlPort value: {0}" -f $sqlPort); 
+          Write-Host ("azSecretsManagerName: {0}" -f "$azSecretsManagerName"); 
           Write-Host ("Matrix mssqlversion: {0}" -f "${{ matrix.mssqlversion }}"); 
           Write-Host ("GitHub Run Id: {0}" -f "${{ github.run_id }}"); 
           Write-Host ("GitHub Run Number: {0}" -f "${{ github.run_number }}"); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          
           # k8s namespaces must be no longer than 63 chars https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
           $sqlcmdPath = (Get-Command sqlcmd).Path.TrimEnd("\\SQLCMD.EXE");
           echo "namespace=ns-${{ github.run_id }}-${{ github.run_number }}-${{ matrix.mssqlversion }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append 
