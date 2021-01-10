@@ -323,7 +323,7 @@ jobs:
           (Get-ChildItem $basePath -recurse -include "*TestResults*.xml").FullName; 
 
           (Get-ChildItem $basePath -recurse -include "*TestResults*.xml").FullName|Copy-Item -Destination $ArtifactPath -recurse -PassThru
-          Set-Content -Path ($ArtifactPath+"CommitId.txt") -Value "$(Build.SourceVersion)"
+          Set-Content -Path ($ArtifactPath+"CommitId.txt") -Value "${{ github.sha }}"
 
       - name: archive junit test artifact
         uses: actions/upload-artifact@v2
@@ -334,3 +334,35 @@ jobs:
             ${{ env.test.artifact_dir }}\
 
 # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+##--##--##--##--##--##--##--##--##--##---##--##--##--##--##--##--##--##--##--##
+##--##--##--##--##--##--##--##--##--##---##--##--##--##--##--##--##--##--##--##
+
+    # - task: PowerShell@2
+    #   name: TagArtifact
+    #   inputs:
+    #     targetType: 'inline'
+    #     script: |
+    #       $CheckIfGitOk = {param($isOk);if(-not $isOk){Write-Host "##vso[task.logissue type=error]git gailed!";throw "git failed!"}};    
+          
+    #       $TagName = "$(SQLVersionEdition)_$(Build.BuildId)"
+
+    #       Set-Location "$(Pipeline.Workspace)\tSQLtArtifacts\";
+
+    #       Write-Host ("ArtifactBranchName: {0}" -f "$(ArtifactBranchName)"); 
+    #       try{
+    #         git status
+    #         git remote show origin
+
+    #         git switch "$(ArtifactBranchName)"
+    #         $CheckIfGitOk.invoke($?);
+
+    #         git tag $TagName;
+    #         $CheckIfGitOk.invoke($?);
+
+    #         git push --tags
+    #         $CheckIfGitOk.invoke($?);
+
+    #         git status
+    #       }catch{
+    #         throw "git failed. See prior errors.";
+    #       }  
