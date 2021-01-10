@@ -54,7 +54,7 @@ jobs:
           $cert = New-SelfSignedCertificate -FriendlyName "tSQLt_testKey" -Type CodeSigningCert -Subject "CN=localhost" -KeyAlgorithm RSA -HashAlgorithm SHA1 -KeyLength 2048 -SmimeCapabilities -CertStoreLocation "cert:/LocalMachine" -Provider "Microsoft Strong Cryptographic Provider"
           $pwd = ConvertTo-SecureString -String "$env:PFX_PASSWORD" -Force -AsPlainText
           $pfxFile = Export-PfxCertificate -cert ("Cert:\LocalMachine\My\" + $cert.thumbprint) -FilePath $env:PFX_PATH -Password $pwd
-          &"${{ github.workspace }}\tSQLt\Build\SnInstallPfx" $env:PFX_PATH "$env:PFX_PASSWORD" tSQLt_OfficialSigningKey
+          &"${{ github.workspace }}\tSQLt\Build\SnInstallPfx" "$env:PFX_PATH" "$env:PFX_PASSWORD" tSQLt_OfficialSigningKey
 
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
@@ -62,15 +62,15 @@ jobs:
       - name: build tsqltCLR
         shell: pwsh
         run: |
-          cd ${{ github.workspace }}\tSQLt\tSQLtCLR
+          cd "${{ github.workspace }}\tSQLt\tSQLtCLR"
           msbuild .\tSQLtCLR.sln -m -p:Configuration=CruiseControl
 
       - name: copy files to artifact staging and compress to tSQLtCLR.zip
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Path $env:ARTIFACT_DIR\tSQLtCLR
-          New-Item -ItemType Directory -Path ${{ github.workspace }}\tSQLt\Build\output
-          Get-Item -Path ${{ github.workspace }}\tSQLt\tSQLtCLR\*\bin\*\* -Filter *.dll | Copy-Item -Destination $env:ARTIFACT_DIR\tSQLtCLR -Container:$false
+          New-Item -ItemType Directory -Path "$env:ARTIFACT_DIR\tSQLtCLR"
+          New-Item -ItemType Directory -Path "${{ github.workspace }}\tSQLt\Build\output"
+          Get-Item -Path "${{ github.workspace }}\tSQLt\tSQLtCLR\*\bin\*\*" -Filter *.dll | Copy-Item -Destination "$env:ARTIFACT_DIR\tSQLtCLR" -Container:$false
           $compress = @{
             Path = "$env:ARTIFACT_DIR\tSQLtCLR\*.dll"
             CompressionLevel = "Fastest"
@@ -79,24 +79,23 @@ jobs:
           Compress-Archive @compress
  
       - name: ant Build/tSQLt.build.xml
-        run: ant -buildfile ${{ github.workspace }}\tSQLt\Build\tSQLt.build.xml all
+        run: ant -buildfile "${{ github.workspace }}\tSQLt\Build\tSQLt.build.xml" all
 
       - name: copy tSQLt artifacts to ${{ env.artifact_dir }}
         shell: pwsh
         run: |
-          Remove-Item $env:ARTIFACT_DIR -Recurse
-          New-Item -ItemType Directory -Path $env:ARTIFACT_DIR
+          Remove-Item "$env:ARTIFACT_DIR" -Recurse
+          New-Item -ItemType Directory -Path "$env:ARTIFACT_DIR"
           $basePath = "${{ github.workspace }}\tSQLt\Build\output\";
           $artifactFiles = (@("Version.txt","tSQLt.zip","tSQLt.tests.zip","tSQLtSnippets(SQLPrompt).zip")| ForEach-Object { $basePath + $_ });
-          $artifactFiles | Copy-Item -Verbose -Destination $env:ARTIFACT_DIR;
+          $artifactFiles | Copy-Item -Verbose -Destination "$env:ARTIFACT_DIR";
 
       - name: Archive production artifact
         uses: actions/upload-artifact@v2
         with:
           if-no-files-found: error
           name: tSQLtAndTests
-          path: |
-            ${{ env.artifact_dir }}\
+          path: "${{ env.artifact_dir }}\\"
 
 #-##-###-#####-########-#############-#####################-#################################
 
@@ -178,7 +177,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: tSQLtAndTests
-          path: ${{ github.workspace }}\tSQLt\Build_Artifact
+          path: "${{ github.workspace }}\\tSQLt\\Build_Artifact"
 
       - name: print more env variables
         shell: pwsh
@@ -186,7 +185,7 @@ jobs:
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           Write-Host "Dir ${{ github.workspace }}\tSQLt\Build_Artifact -- ";
-          Get-ChildItem -Path ${{ github.workspace }}\tSQLt\Build_Artifact
+          Get-ChildItem -Path "${{ github.workspace }}\tSQLt\Build_Artifact"
           Write-Host "";
           Write-Host ("namespace value: {0}" -f $env:namespace); 
           Write-Host ("sqlPort value: {0}" -f $env:sqlPort); 
@@ -282,15 +281,13 @@ jobs:
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           Write-Host "SQL Server Info";
-          kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -Q "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;"
+          kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -l 60 -Q "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;"
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
       - name: print sql version info
         shell: pwsh
         run: |
-          # TODO: This will randomly fail based on how quickly the k8s endpoint and service are ready for use. Sometimes it is very quickly and sometimes not.
-          # We need to make Invoke-Sqlcmd retry the login if it fails.
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           # @SM --> TODO: Fix the password issue.
@@ -330,8 +327,7 @@ jobs:
         with:
           if-no-files-found: error
           name: jUnitTests-${{ matrix.mssqlversion }}
-          path: |
-            ${{ env.test_artifact_dir }}\
+          path: "${{ env.test_artifact_dir }}\\"
 
 # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
 ##--##--##--##--##--##--##--##--##--##---##--##--##--##--##--##--##--##--##--##
