@@ -113,6 +113,7 @@ jobs:
       SQL_PORT_MIN: ${{ secrets.SQL_PORT_MIN }}
       SQL_PORT_MAX: ${{ secrets.SQL_PORT_MAX }}
       SA_PASSWORD: ${{ secrets.SA_PASSWORD }}
+      TEST_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\TestResults
 
     strategy: 
       matrix:
@@ -223,7 +224,7 @@ jobs:
         run: |
           # display the values of all the environment variables
           # MDP: secrets seem pretty secret
-          Get-ChildItem Env: | Sort Name
+          # Get-ChildItem Env: | Sort Name
 
           # create the namespace
           kubectl config current-context
@@ -294,7 +295,7 @@ jobs:
           Write-Host "";
           # @SM --> TODO: Fix the password issue.
           Write-Host Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
-          $DS = Invoke-Sqlcmd -Query -ConnectionTimeout 600 "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
+          $DS = Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
 
           $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
           Write-Host "";
@@ -307,52 +308,29 @@ jobs:
         working-directory: ${{ github.workspace }}\tSQLt\Build
         run: ant -buildfile tSQLt.validatebuild.xml all -D"db.server"="$env:fqdnAndPort" -D"db.name"=tSQLt_dev -D"db.login"="-U sa -P $env:SA_PASSWORD" -D"sqlcmd.path"="$env:sqlcmdPath"
 
+      - name: create junit artifact
+        shell: pwsh
+        run: |
+          $basePath = "${{ github.workspace }}";
+          $basePath;
+
+          $ArtifactPath = "$env:TEST_ARTIFACT_DIR\";
+          $ArtifactPath;
+
+          New-Item -Path $ArtifactPath -ItemType directory -Force
+
+          (Get-ChildItem $basePath -recurse)| Out-File -FilePath $ArtifactPath+"dir.txt"
+          (Get-ChildItem $basePath -recurse -include "*TestResults*.xml").FullName; 
+
+          (Get-ChildItem $basePath -recurse -include "*TestResults*.xml").FullName|Copy-Item -Destination $ArtifactPath -recurse -PassThru
+          Set-Content -Path ($ArtifactPath+"CommitId.txt") -Value "$(Build.SourceVersion)"
+
+      - name: archive junit test artifact
+        uses: actions/upload-artifact@v2
+        with:
+          if-no-files-found: error
+          name: jUnitTests-${{ matrix.mssqlversion }}
+          path: |
+            ${{ env.test.artifact_dir }}\
 
 # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
-
-
-
-
-# >>>>>>>>>>>> START HERE <<<<<<<<<<<<<<
-
-    
-    # - task: Ant@1
-    #   name: Run_tSQLt_validatebuild_xml
-    #   inputs:
-    #     buildFile: '../tSQLt/Build/tSQLt.validatebuild.xml'
-    #     options: '-Ddb.version="$(SQLVersion)" -Ddb.server="$(FQDNAndPort)" -Ddb.name=tSQLt_dev -Ddb.login="-U $(tSQLt-UserForCIEnvironment-UserName) -P $(tSQLt-UserForCIEnvironment-Password)" -Dsqlcmd.path="$(SQLCMDPath)"'
-    #     targets: 'all'
-    #     publishJUnitResults: true
-    #     testResultsFiles: '../**/?(Example)TestResults*.xml'
-    #     testRunTitle: '$(SQLVersionEdition)'
-    #     javaHomeOption: 'JDKVersion'
-        
-    # - task: PowerShell@2
-    #   name: CreateTestResultArtifact
-    #   inputs:
-    #     targetType: 'inline'
-    #     failOnStderr: true
-    #     script: |
-    #       "---------------------------------------------------"
-    #       $BasePath = "$(Build.SourcesDirectory)\..";
-    #       $BasePath;
-    #       "==================================================="
-    #       $ArtifactPath = ($BasePath+"\tSQLt\Build\output\TestResults\");
-    #       $ArtifactPath;
-    #       "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
-    #       New-Item -Path $ArtifactPath  -ItemType directory -Force
-    #       (Get-ChildItem $BasePath -recurse);
-    #       "== == == == == == == == == == == == == == == == == "
-    #       (Get-ChildItem $BasePath -recurse)|Out-File  -FilePath $ArtifactPath+"dir.txt"
-    #       (Get-ChildItem $BasePath -recurse -include "*TestResults*.xml").FullName; 
-    #       "==-==-==-==-==-==-==-==-==-==-==-==-==-==-==-==-==-"
-    #       (Get-ChildItem $BasePath -recurse -include "*TestResults*.xml").FullName|Copy-Item -Destination $ArtifactPath -recurse -PassThru
-    #       Set-Content -Path ($ArtifactPath+"CommitId.txt") -Value "$(Build.SourceVersion)"
-    #       "=== === === === === === === === === === === === ==="
-    #
-    # - task: PublishPipelineArtifact@1
-    #   name: PublishTestResultArtifact
-    #   inputs:
-    #     targetPath: '$(Build.SourcesDirectory)/../tSQLt/Build/output/TestResults'
-    #     artifact: 'TestResults_$(SQLVersionEdition)'
-    #     publishLocation: 'pipeline'
