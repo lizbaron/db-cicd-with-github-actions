@@ -89,6 +89,7 @@ New-AzContainerRegistry -ResourceGroupName "$resourceGroupName" -Name "$containe
 
 #### Setup AKS (https://docs.microsoft.com/en-us/azure/aks/windows-container-powershell)
 To make this less cost prohibitive, turn on the startstoppreview feature. (https://docs.microsoft.com/en-us/azure/aks/start-stop-cluster)
+- `az aks show --name $aksClusterName --resource-group $resourceGroupName --query 'agentPoolProfiles[].{Name:name, PowerState:powerState.code}'`
 
 ##### Docs - Windows Node Pool
 - https://docs.microsoft.com/en-us/azure/aks/windows-container-cli

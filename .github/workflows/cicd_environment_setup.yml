@@ -49,8 +49,6 @@ jobs:
       - name: login via az module
         uses: azure/login@v1
         with:
-          # creds: ${{secrets.az_sp_credentials}}
-          # creds: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
           creds: ${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS }}
           enable-azpssession: true 
 
