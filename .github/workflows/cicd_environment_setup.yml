@@ -62,6 +62,6 @@ jobs:
               sshPassphrase = "$env:SSH_PASSPHRASE";
               linuxNodePoolDefaultVMSize = "$env:LINUX_NODEPOOL_DEFAULT_VM_SIZE"
               windowsNodePoolDefaultVMSize = "$env:WINDOWS_NODEPOOL_DEFAULT_VM_SIZE"
-              debugOn = $true;
+              debugOn = $false;
             }; 
             ./envSetup/setup.ps1 @Parameters; 
