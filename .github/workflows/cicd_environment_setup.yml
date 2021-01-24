@@ -1,7 +1,7 @@
 # This is the workflow to setup the environment for Data Platform CI/CD pipelines
 # 
 # AZURE: Before this workflow will run successfully you must do the following
-# 1. Run manualPrep.ps1 and set up the AZ_SP_CREDENTIALS and AZ_SP_OBJECT_ID secrets in Settings > Secrets > "New repository secret" 
+# 1. Run manualPrep.ps1 in the Azure Portal and follow the instructions to set up the AZ_SP_CRED_<projectName> secret in GitHub (Settings > Secrets > "New repository secret"). 
 # 2. Set up the SSH_PASSPHRASE secret in Settings > Secrets > "New repository secret"
 
 name: CI/CD Environment Setup
