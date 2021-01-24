@@ -60,7 +60,8 @@ jobs:
       - name: login via az module
         uses: azure/login@v1
         with:
-          creds: ${{secrets.az_sp_credentials}}
+          # creds: ${{secrets.az_sp_credentials}}
+          creds: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
           enable-azpssession: true 
 
       # documentation: https://github.com/marketplace/actions/azure-powershell-action
