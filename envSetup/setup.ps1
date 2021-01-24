@@ -109,12 +109,13 @@ $azServicePrincipalCreds = New-Object -TypeName System.Management.Automation.PSC
 ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa -N "$sshPassphrase"
 
 # Create "~/.azure/acsServicePrincipal.json" with the format {"$azSubscriptionId":{"service_principal":"$azServicePrincipalClientId","client_secret":"$azServicePrincipalClientSecret"}}
-# $fileContent = ('{"', $azSubscriptionId, '":{"service_principal":"', $azServicePrincipalClientId, '","client_secret":"', $azServicePrincipalClientSecret, '"}}' -join "");
-# Set-Content -Path ~/.azure/acsServicePrincipal.json -Value $fileContent;
+$fileContent = ('{"', $azSubscriptionId, '":{"service_principal":"', $azServicePrincipalClientId, '","client_secret":"', $azServicePrincipalClientSecret, '"}}' -join "");
+Set-Content -Path ~/.azure/acsServicePrincipal.json -Value $fileContent;
 
 # Create a new AKS Cluster with a single linux node
 # TODO: Figure out if we can create a .json file for the service principal a la https://github.com/Azu re/azure-powershell/issues/13012 
-New-AzAksCluster -Force -ServicePrincipalIdAndSecret $azServicePrincipalCreds -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword -KubernetesVersion "1.19.3" -NodeVmSize $linuxNodePoolDefaultVMSize -AcrNameToAttach $containerRegistryName;
+New-AzAksCluster -Force -ServicePrincipalIdAndSecret $azServicePrincipalCreds -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword -KubernetesVersion "1.19.3" -NodeVmSize $linuxNodePoolDefaultVMSize 
+# -AcrNameToAttach $containerRegistryName;
 
 # Add a Windows Server node pool to our existing cluster
 New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName" -VMSetType VirtualMachineScaleSets -Count 1 -KubernetesVersion "1.19.3" -VmSize $windowsNodePoolDefaultVMSize;
