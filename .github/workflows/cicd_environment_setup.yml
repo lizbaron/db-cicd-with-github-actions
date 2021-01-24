@@ -57,7 +57,6 @@ jobs:
       # MDP: This task can be replaced with Connect-AzAccount via service principal (https://docs.microsoft.com/en-us/powershell/azure/authenticate-azureps?view=azps-5.3.0). However for most pipelines, which would use azure powershell more than once, this is an anti-pattern.
       # TODO: measure difference in performance between using this task and Connect-AzAccount in the next task
       - name: login via az module
-        if: ${{ false }}
         uses: azure/login@v1
         with:
           creds: ${{secrets.az_sp_credentials}}
@@ -65,7 +64,6 @@ jobs:
 
       # documentation: https://github.com/marketplace/actions/azure-powershell-action
       - name: run azure powershell script
-        if: ${{ false }}
         uses: azure/powershell@v1
         with:
           azpsversion: 'latest'
