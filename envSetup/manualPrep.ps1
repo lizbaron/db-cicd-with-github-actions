@@ -36,7 +36,7 @@ Write-Output "💖   GitHub secrets can be set by going to Settings > Secrets > 
 Write-Output "💖";
 Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
 
-$serviceProviders = 'Microsoft.KeyVault', 'Microsoft.Kubernetes', 'Microsoft.ContainerRegistry';
+$serviceProviders = 'Microsoft.KeyVault', 'Microsoft.Kubernetes', 'Microsoft.ContainerRegistry', 'Microsoft.ContainerService';
 
 # Register required services
 foreach ($item in $serviceProviders) {

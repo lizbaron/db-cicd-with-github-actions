@@ -97,9 +97,6 @@ Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'aksWinNodePoolNam
 # Create a Container Registry. If the ACR exists, throws a non-terminating error.
 New-AzContainerRegistry -ResourceGroupName "$azResourceGroupName" -Name "$containerRegistryName" -Sku "Basic"
 
-# There is something miserable about permissions (https://github.com/Azure/AKS/issues/1517). It looks like even if you create both the ACR and AKS with the same service principal, you have to assign the acrpull role to the service principal for it to attach without error to AKS.
-# New-AzRoleAssignment -ApplicationId $azServicePrincipalClientId -ResourceGroupName "$azResourceGroupName" -ResourceName "$containerRegistryName" -ResourceType "Microsoft.ContainerRegistry/registries" -RoleDefinitionName "AcrPull" 
-
 # Suppress irritating warnings about breaking changes in New-AzAksCluster, "WARNING: Upcoming breaking changes in the cmdlet 'New-AzAksCluster' :The cmdlet 'New-AzAksCluster' is replacing this cmdlet. - The parameter : 'NodeVmSetType' is changing. - Change description : Default value will be changed from AvailabilitySet to VirtualMachineScaleSets. - The parameter : 'NetworkPlugin' is changing. - Change description : Default value will be changed from None to azure."
 Set-Item Env:\SuppressAzurePowerShellBreakingChangeWarnings "true"
 
@@ -114,7 +111,6 @@ Set-Content -Path ~/.azure/acsServicePrincipal.json -Value $fileContent;
 
 # Create a new AKS Cluster with a single linux node
 # TODO: Figure out if we can create a .json file for the service principal a la https://github.com/Azu re/azure-powershell/issues/13012 
-# New-AzAksCluster -Force -ServicePrincipalIdAndSecret $azServicePrincipalCreds -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword -KubernetesVersion "1.19.3" -NodeVmSize $linuxNodePoolDefaultVMSize -AcrNameToAttach $containerRegistryName;
 New-AzAksCluster -ServicePrincipalIdAndSecret $azServicePrincipalCreds -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword -KubernetesVersion "1.19.3" -NodeVmSize $linuxNodePoolDefaultVMSize;
 
 # Add a Windows Server node pool to our existing cluster
