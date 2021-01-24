@@ -24,7 +24,7 @@ while ("Succeeded" -ne (az group list --query "[?name=='$azResourceGroupName'].{
 }
 
 # Create the service principal. The contributor role is insufficient for attaching a newly created ACR to an AKS cluster.
-$spCredential = az ad sp create-for-rbac -n "$azServicePrincipalName" --sdk-auth --role owner --scopes "/subscriptions/$azSubscriptionId/resourceGroups/$azResourceGroupName" 
+$spCredential = az ad sp create-for-rbac -n "$azServicePrincipalName" --sdk-auth --role contributor --scopes "/subscriptions/$azSubscriptionId/resourceGroups/$azResourceGroupName" 
 
 $spCredential;
 Write-Output "";

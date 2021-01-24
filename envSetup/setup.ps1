@@ -4,6 +4,7 @@ Param(
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $sshPassphrase,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $linuxNodePoolDefaultVMSize,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $windowsNodePoolDefaultVMSize,
+    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $kubernetesVersion,
     [Parameter(Mandatory=$false)][Switch] $debugOn
 );
 
@@ -111,7 +112,7 @@ Set-Content -Path ~/.azure/acsServicePrincipal.json -Value $fileContent;
 
 # Create a new AKS Cluster with a single linux node
 # TODO: Figure out if we can create a .json file for the service principal a la https://github.com/Azu re/azure-powershell/issues/13012 
-New-AzAksCluster -ServicePrincipalIdAndSecret $azServicePrincipalCreds -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword -KubernetesVersion "1.19.3" -NodeVmSize $linuxNodePoolDefaultVMSize;
+New-AzAksCluster -ServicePrincipalIdAndSecret $azServicePrincipalCreds -ResourceGroupName "$azResourceGroupName" -Name "$aksClusterName" -NodeCount 1 -NetworkPlugin azure -NodeVmSetType VirtualMachineScaleSets -WindowsProfileAdminUserName "$aksWinUser" -WindowsProfileAdminUserPassword $aksPassword -KubernetesVersion "$kubernetesVersion" -NodeVmSize $linuxNodePoolDefaultVMSize;
 
 # Add a Windows Server node pool to our existing cluster
-New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName" -VMSetType VirtualMachineScaleSets -Count 1 -KubernetesVersion "1.19.3" -VmSize $windowsNodePoolDefaultVMSize;
+New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName" -VMSetType VirtualMachineScaleSets -Count 1 -KubernetesVersion "$kubernetesVersion" -VmSize $windowsNodePoolDefaultVMSize;

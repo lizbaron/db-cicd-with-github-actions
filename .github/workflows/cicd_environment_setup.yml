@@ -21,6 +21,10 @@ on:
         description: 'Windows Node Pool Default VM Size'     
         required: true
         default: 'Standard_D3_v2'
+      kubernetesVersion:
+        description: 'Kubernetes Version'     
+        required: true
+        default: '1.19.6'
 
 jobs:
   build:
@@ -31,6 +35,7 @@ jobs:
       PROJECT_NAME: ${{ github.event.inputs.projectName }}
       LINUX_NODEPOOL_DEFAULT_VM_SIZE: ${{ github.event.inputs.linuxNodePoolDefaultVMSize }}
       WINDOWS_NODEPOOL_DEFAULT_VM_SIZE: ${{ github.event.inputs.windowsNodePoolDefaultVMSize }}
+      KUBERNETES_VERSION: ${{ github.event.inputs.kubernetesVersion }}
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
       SSH_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
 
@@ -62,6 +67,7 @@ jobs:
               sshPassphrase = "$env:SSH_PASSPHRASE";
               linuxNodePoolDefaultVMSize = "$env:LINUX_NODEPOOL_DEFAULT_VM_SIZE"
               windowsNodePoolDefaultVMSize = "$env:WINDOWS_NODEPOOL_DEFAULT_VM_SIZE"
+              kubernetesVersion = "$env:KUBERNETES_VERSION"
               debugOn = $false;
             }; 
             ./envSetup/setup.ps1 @Parameters; 
