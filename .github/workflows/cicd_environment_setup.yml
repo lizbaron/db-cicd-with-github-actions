@@ -33,7 +33,8 @@ jobs:
       WINDOWS_NODEPOOL_DEFAULT_VM_SIZE: ${{ github.event.inputs.windowsNodePoolDefaultVMSize }}
       # TODO: generalize the pipeline by allowing the fetch of credentials based on project name secrets.AZ_SP_CRED_TEST_20210123
       # AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets.AZ_SP_CREDENTIALS }}
-      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
+      # AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
+      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets.AZ_SP_CRED_TEST_20210123 }}
       SSH_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
 
     steps:
@@ -64,6 +65,7 @@ jobs:
 
       # documentation: https://github.com/marketplace/actions/azure-powershell-action
       - name: run azure powershell script
+        if: ${{ false }}
         uses: azure/powershell@v1
         with:
           azpsversion: 'latest'
