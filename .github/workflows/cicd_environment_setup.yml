@@ -51,7 +51,6 @@ jobs:
 
       # documentation: https://github.com/marketplace/actions/azure-powershell-action
       - name: run azure powershell script
-        if: ${{ false }}
         uses: azure/powershell@v1
         with:
           azpsversion: 'latest'

@@ -30,7 +30,7 @@ $spCredential;
 Write-Output "";
 Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   INSTRUCTIONS  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
 Write-Output "💖";
-Write-Output "💖   Copy the json snippet above and save it as the GitHub Secret `"AZ_SP_CREDENTIALS`"."; 
+Write-Output "💖   Copy the json snippet above and save it as the GitHub Secret `"AZ_SP_CRED_$projectName`"."; 
 Write-Output "💖";
 Write-Output "💖   GitHub secrets can be set by going to Settings > Secrets > `"New repository secret`".";
 Write-Output "💖";
