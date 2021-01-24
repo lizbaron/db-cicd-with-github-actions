@@ -31,26 +31,11 @@ jobs:
       PROJECT_NAME: ${{ github.event.inputs.projectName }}
       LINUX_NODEPOOL_DEFAULT_VM_SIZE: ${{ github.event.inputs.linuxNodePoolDefaultVMSize }}
       WINDOWS_NODEPOOL_DEFAULT_VM_SIZE: ${{ github.event.inputs.windowsNodePoolDefaultVMSize }}
-      # TODO: generalize the pipeline by allowing the fetch of credentials based on project name secrets.AZ_SP_CRED_TEST_20210123
-      # AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets.AZ_SP_CREDENTIALS }}
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
       SSH_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
 
     steps:
       - uses: actions/checkout@v2
-
-      - name: test dynamic environment variables
-        shell: pwsh
-        run: |
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Write-Host "";
-          Write-Host ("projectName value: {0}" -f $env:PROJECT_NAME);
-          Write-Host ("LINUX_NODEPOOL_DEFAULT_VM_SIZE value: {0}" -f $env:LINUX_NODEPOOL_DEFAULT_VM_SIZE); 
-          Write-Host ("WINDOWS_NODEPOOL_DEFAULT_VM_SIZE: {0}" -f "$env:WINDOWS_NODEPOOL_DEFAULT_VM_SIZE"); 
-          Write-Host ("AZ_SERVICE_PRINCIPAL_CREDENTIALS: {0}" -f "$env:AZ_SERVICE_PRINCIPAL_CREDENTIALS"); 
-          Write-Host "";
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-
 
       # documentation: https://github.com/azure/login#configure-azure-credentials
       # TODO: set up a service principal which has permission only on the resource group and associated resources it creates
