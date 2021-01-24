@@ -109,8 +109,8 @@ $azServicePrincipalCreds = New-Object -TypeName System.Management.Automation.PSC
 ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa -N "$sshPassphrase"
 
 # Create "~/.azure/acsServicePrincipal.json" with the format {"$azSubscriptionId":{"service_principal":"$azServicePrincipalClientId","client_secret":"$azServicePrincipalClientSecret"}}
-$fileContent = ('{"', $azSubscriptionId, '":{"service_principal":"', $azServicePrincipalClientId, '","client_secret":"', $azServicePrincipalClientSecret, '"}}' -join "");
-Set-Content -Path ~/.azure/acsServicePrincipal.json -Value $fileContent;
+# $fileContent = ('{"', $azSubscriptionId, '":{"service_principal":"', $azServicePrincipalClientId, '","client_secret":"', $azServicePrincipalClientSecret, '"}}' -join "");
+# Set-Content -Path ~/.azure/acsServicePrincipal.json -Value $fileContent;
 
 # Create a new AKS Cluster with a single linux node
 # TODO: Figure out if we can create a .json file for the service principal a la https://github.com/Azu re/azure-powershell/issues/13012 
