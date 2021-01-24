@@ -12,7 +12,7 @@ on:
       projectName:
         description: 'Project Name'     
         required: true
-        default: 'db-cicd-with-github-actions'
+        default: 'db_cicd_project'
       linuxNodePoolDefaultVMSize:
         description: 'Linux Node Pool Default VM Size'     
         required: true
