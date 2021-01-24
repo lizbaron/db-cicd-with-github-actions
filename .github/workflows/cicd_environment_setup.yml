@@ -33,7 +33,7 @@ jobs:
       WINDOWS_NODEPOOL_DEFAULT_VM_SIZE: ${{ github.event.inputs.windowsNodePoolDefaultVMSize }}
       # TODO: generalize the pipeline by allowing the fetch of credentials based on project name a la ${{ join(['secrets.AZ_SP_CRED_',github.event.inputs.projectName],''}}
       # AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets.AZ_SP_CREDENTIALS }}
-      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ join(['secrets.AZ_SP_CRED_',github.event.inputs.projectName],''}}
+      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ format('secrets.AZ_SP_CRED_{0}', github.event.inputs.projectName) }}
       SSH_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
 
     steps:
