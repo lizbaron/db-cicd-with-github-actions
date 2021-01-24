@@ -1,6 +1,11 @@
-Param( 
-    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string] $projectName  = "db-cicd-with-github-actions"
+Param(
+    [Parameter(Mandatory=$true,HelpMessage="projectName must be at least of length 3 no more than 50 and can contain only alphanumeric characters ([a-z], [A-Z], [0-9]) or underscores (_). Spaces are not allowed.")]
+    [ValidatePattern("^[0-9a-zA-Z_]{3,50}$")]
+    [string] $projectName  = "db_actions"
 );
+
+# Make sure that the projectName parameter does not include characters not allowed in the GitHub Secrets names
+# As of 2021-01-24, "Secret names can only contain alphanumeric characters ([a-z], [A-Z], [0-9]) or underscores (_). Spaces are not allowed."
 
 
 $azSubscriptionId = az account show --query id -o tsv

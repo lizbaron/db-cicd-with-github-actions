@@ -16,7 +16,7 @@ on:
       linuxNodePoolDefaultVMSize:
         description: 'Linux Node Pool Default VM Size'     
         required: true
-        default: 'Standard_D1_v2'
+        default: 'Standard_D2_v2'
       windowsNodePoolDefaultVMSize:
         description: 'Windows Node Pool Default VM Size'     
         required: true

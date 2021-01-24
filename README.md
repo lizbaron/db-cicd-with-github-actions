@@ -17,6 +17,19 @@ With gratitude this session heavily borrows from prior art created with Sreeja P
 - Namespaces on k8s
 - Where are container images built?
 
+### How to use
+1. login to Azure
+1. confirm which subscription you would like to use and that it is both "State"="Enabled" and "IsDefault"="True" `az account list -o table` 
+1. switch to your desired subscription if not "IsDefault"="True" `az account set --subscription <YOURSUBSCRIPTIONID>`
+1. confirm ^^^ `az account list -o table`
+1. in Azure Cloud Shell
+  1. make a "repos" directory and in that directory, clone this repository `git clone <THISREPO>` (TODO: figure out if markdown will allow self-reference to current repo)
+  1. run `envSetup/manualPrep.ps1 -projectName <YOURPROJECTNAME>`
+1. follow the instructions to save the json snippet to your GitHub Secrets with the correct name
+1. in the GitHub repo, run the "CI/CD Environment Setup" workflow with <YOURPROJECTNAME> as the Project Name parameter
+
+
+
 ### Required Resources
 
 - Key Management: Azure Key Vault, GCP Key Management Services, AWS Key Management Services
