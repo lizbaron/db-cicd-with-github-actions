@@ -32,17 +32,32 @@ jobs:
       LINUX_NODEPOOL_DEFAULT_VM_SIZE: ${{ github.event.inputs.linuxNodePoolDefaultVMSize }}
       WINDOWS_NODEPOOL_DEFAULT_VM_SIZE: ${{ github.event.inputs.windowsNodePoolDefaultVMSize }}
       # TODO: generalize the pipeline by allowing the fetch of credentials based on project name a la ${{ join(['secrets.AZ_SP_CRED_',github.event.inputs.projectName],''}}
-      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets.AZ_SP_CREDENTIALS }}
+      # AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets.AZ_SP_CREDENTIALS }}
+      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ join(['secrets.AZ_SP_CRED_',github.event.inputs.projectName],''}}
       SSH_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
 
     steps:
       - uses: actions/checkout@v2
+
+      - name: test dynamic environment variables
+        shell: pwsh
+        run: |
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          Write-Host ("projectName value: {0}" -f $env:PROJECT_NAME);
+          Write-Host ("LINUX_NODEPOOL_DEFAULT_VM_SIZE value: {0}" -f $env:LINUX_NODEPOOL_DEFAULT_VM_SIZE); 
+          Write-Host ("WINDOWS_NODEPOOL_DEFAULT_VM_SIZE: {0}" -f "$env:WINDOWS_NODEPOOL_DEFAULT_VM_SIZE"); 
+          Write-Host ("AZ_SERVICE_PRINCIPAL_CREDENTIALS: {0}" -f "$env:AZ_SERVICE_PRINCIPAL_CREDENTIALS"); 
+          Write-Host "";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+
 
       # documentation: https://github.com/azure/login#configure-azure-credentials
       # TODO: set up a service principal which has permission only on the resource group and associated resources it creates
       # MDP: This task can be replaced with Connect-AzAccount via service principal (https://docs.microsoft.com/en-us/powershell/azure/authenticate-azureps?view=azps-5.3.0). However for most pipelines, which would use azure powershell more than once, this is an anti-pattern.
       # TODO: measure difference in performance between using this task and Connect-AzAccount in the next task
       - name: login via az module
+        if: ${{ false }}
         uses: azure/login@v1
         with:
           creds: ${{secrets.az_sp_credentials}}
@@ -50,6 +65,7 @@ jobs:
 
       # documentation: https://github.com/marketplace/actions/azure-powershell-action
       - name: run azure powershell script
+        if: ${{ false }}
         uses: azure/powershell@v1
         with:
           azpsversion: 'latest'
