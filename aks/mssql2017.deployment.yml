@@ -22,10 +22,8 @@ spec:
         agentpool: akswin
       containers:
       - name: mssql2017-db
-        image: crn52f71dc003.azurecr.io/mssql2017
-        envFrom:
-        - secretRef:
-            name: mssql-secret
+        image: containerRegistryName/mssql2017
+        command: [ "echo", "SUCCESS" ]        
         resources:
           limits:
             cpu: 1

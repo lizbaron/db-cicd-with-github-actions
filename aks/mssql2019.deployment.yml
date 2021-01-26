@@ -1,3 +1,7 @@
+# Documentation
+# - https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/
+# - https://kubernetes.io/docs/tasks/inject-data-application/define-interdependent-environment-variables/
+# - 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,10 +22,8 @@ spec:
         agentpool: akswin
       containers:
       - name: mssql2019-db
-        image: crn52f71dc003.azurecr.io/mssql2017
-        envFrom:
-        - secretRef:
-            name: mssql-secret
+        image: containerRegistryName/mssql2019
+        command: [ "echo", "SUCCESS" ]        
         resources:
           limits:
             cpu: 1

@@ -32,7 +32,7 @@ With gratitude this session heavily borrows from prior art created with Sreeja P
 - [ ] GitHub action to build sql server images
 - [ ] Automate adding images to the new ACR
 - [ ] Automate attaching ACR to AKS
-- [ ] Automate updating deployment to refer to the correct ACR 
+- [x] Automate updating deployment to refer to the correct ACR 
 ```
       containers:
       - name: mssql2017-db

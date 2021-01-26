@@ -1,0 +1,34 @@
+name: Test Stuff
+
+# Controls when the action will run. 
+on:
+  workflow_dispatch: 
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+
+  job-1:
+    name: set vars
+    runs-on: windows-latest # Kubectl 1.20
+
+    steps:
+      - name: create vars
+        id: create-vars
+        shell: pwsh
+        run: |
+          $cert = New-SelfSignedCertificate -FriendlyName "tSQLt_testKey" -Type CodeSigningCert -Subject "CN=localhost" -KeyAlgorithm RSA -HashAlgorithm SHA1 -KeyLength 2048 -SmimeCapabilities -CertStoreLocation "cert:/LocalMachine" -Provider "Microsoft Strong Cryptographic Provider"
+          $pwd = ConvertTo-SecureString -String "$env:PFX_PASSWORD" -Force -AsPlainText
+          $pfxFile = Export-PfxCertificate -cert ("Cert:\LocalMachine\My\" + $cert.thumbprint) -FilePath $env:PFX_PATH -Password $pwd
+          &"${{ github.workspace }}\tSQLt\Build\SnInstallPfx" "$env:PFX_PATH" "$env:PFX_PASSWORD" tSQLt_OfficialSigningKey
+
+  job-2:
+    name: read vars
+    needs: job-1
+    runs-on: windows-latest # Kubectl 1.20
+
+    strategy:
+      matrix: ${{fromJson(needs.job-1.outputs.mssqlversions)}}
+
+
+
+
