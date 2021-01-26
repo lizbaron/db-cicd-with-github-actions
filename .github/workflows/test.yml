@@ -44,7 +44,8 @@ jobs:
         id: print-vars
         shell: pwsh
         run: |
-          (needs.job-1.outputs.mssqlversions)['${{ matrix.mssqlversion }}']|FT
+          Write-Host ${{ needs.job-1.outputs.matrixdata }}
+          #()['${{ matrix.mssqlversion }}']|FT
 
 
 
