@@ -19,9 +19,12 @@ jobs:
         id: create-vars
         shell: pwsh
         run: |
-          Write-Host '::set-output name=mssqlversions::{"mssqlversion":["2017","2019"]}'
+          $mssqlversions = @("2017","2019");
+          $matrixData = @{};
+          $mssqlversions|%{$matrixData += @{$_=@{mssqlversion=$_;port=41417;}}}
+          $matrixDataString = ($matrixData|ConvertTo-Json -compress)
+          Write-Host ('::set-output name=mssqlversions::{"mssqlversion":'+$matrixDataString+'}')
           
-    ## echo "::set-output name=matrix::{\"include\":[{\"project\":\"foo\",\"config\":\"Debug\"},{\"project\":\"bar\",\"config\":\"Release\"}]}"
     
     outputs:
       mssqlversions: ${{ steps.create-vars.outputs.mssqlversions }}
