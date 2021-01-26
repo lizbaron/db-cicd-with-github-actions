@@ -42,8 +42,7 @@ jobs:
         id: print-vars
         shell: pwsh
         run: |
-          $mssqlversion = ${{ matrix.mssqlversion }}
-          $mssqlversion|ConvertFrom-Json|FT
+          '${{ matrix.mssqlversion }}'|ConvertFrom-Json|FT
 
 
 
