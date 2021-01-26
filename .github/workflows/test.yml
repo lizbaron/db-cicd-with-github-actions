@@ -21,13 +21,15 @@ jobs:
         run: |
           $mssqlversions = @("2017","2019");
           $matrixData = @();
-          $mssqlversions|%{$matrixData += @((@{mssqlversion=$_;port=41417;quotes="'3'"}|ConvertTo-Json -compress).replace("'","''"))}
-          $matrixDataString = ($matrixData|ConvertTo-Json -compress)
+          $mssqlversions|%{$matrixData += @{$_=@{mssqlversion=$_;port=41417;quotes="'3'"}}}
+          $matrixDataString = ($mssqlversions|ConvertTo-Json -compress)
           Write-Host ('::set-output name=mssqlversions::{"mssqlversion":'+$matrixDataString+'}')
+          Write-Host ('::set-output name=matrixdata::'+$matrixDataString)
           
     
     outputs:
       mssqlversions: ${{ steps.create-vars.outputs.mssqlversions }}
+      matrixdata: ${{ steps.create-vars.outputs.matrixdata }}
 
   job-2:
     name: read vars
@@ -42,7 +44,7 @@ jobs:
         id: print-vars
         shell: pwsh
         run: |
-          '${{ matrix.mssqlversion }}'|ConvertFrom-Json|FT
+          (needs.job-1.outputs.mssqlversions)['${{ matrix.mssqlversion }}']|FT
 
 
 
