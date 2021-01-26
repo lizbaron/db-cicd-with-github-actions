@@ -16,10 +16,12 @@ jobs:
         id: create-vars
         shell: pwsh
         run: |
-          $cert = New-SelfSignedCertificate -FriendlyName "tSQLt_testKey" -Type CodeSigningCert -Subject "CN=localhost" -KeyAlgorithm RSA -HashAlgorithm SHA1 -KeyLength 2048 -SmimeCapabilities -CertStoreLocation "cert:/LocalMachine" -Provider "Microsoft Strong Cryptographic Provider"
-          $pwd = ConvertTo-SecureString -String "$env:PFX_PASSWORD" -Force -AsPlainText
-          $pfxFile = Export-PfxCertificate -cert ("Cert:\LocalMachine\My\" + $cert.thumbprint) -FilePath $env:PFX_PATH -Password $pwd
-          &"${{ github.workspace }}\tSQLt\Build\SnInstallPfx" "$env:PFX_PATH" "$env:PFX_PASSWORD" tSQLt_OfficialSigningKey
+          Write-Host '::set-output name=mssqlversions::{"mssqlversion":["2017","2019"]}'
+          
+    ## echo "::set-output name=matrix::{\"include\":[{\"project\":\"foo\",\"config\":\"Debug\"},{\"project\":\"bar\",\"config\":\"Release\"}]}"
+    
+    outputs:
+      mssqlversions: ${{ steps.create-vars.outputs.mssqlversions }}
 
   job-2:
     name: read vars
@@ -28,6 +30,13 @@ jobs:
 
     strategy:
       matrix: ${{fromJson(needs.job-1.outputs.mssqlversions)}}
+
+    steps:
+      - name: print vars
+        id: print-vars
+        shell: pwsh
+        run: |
+          Write-Host "${{ matrix.mssqlversion }}"
 
 
 
