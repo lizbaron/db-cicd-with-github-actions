@@ -24,7 +24,7 @@ jobs:
           $mssqlversions|%{$matrixData += @{$_=@{mssqlversion=$_;port=41417;quotes="'3'"}}}
           $mssqlversionsString = '{"mssqlversion":'+($mssqlversions|ConvertTo-Json -compress)+'}'
           $matrixDataString = ($matrixData|ConvertTo-Json -compress)
-          Write-Host ('::set-output name=mssqlversions::'+$matrixDataString)
+          Write-Host ('::set-output name=mssqlversions::'+$mssqlversionsString)
           Write-Host ('::set-output name=matrixdata::'+$matrixDataString)
           
     outputs:
