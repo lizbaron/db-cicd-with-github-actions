@@ -20,10 +20,13 @@ jobs:
         shell: pwsh
         run: |
           $mssqlversions = @("2017","2019");
+          
           $matrixData = @{};
           $mssqlversions|%{$matrixData += @{$_=@{mssqlversion=$_;port=41417;quotes="'3'"}}}
+
           $mssqlversionsString = '{"mssqlversion":'+($mssqlversions|ConvertTo-Json -compress)+'}'
           $matrixDataString = ($matrixData|ConvertTo-Json -compress).replace("'","''")
+          
           Write-Host ('::set-output name=mssqlversions::'+$mssqlversionsString)
           Write-Host ('::set-output name=matrixdata::'+$matrixDataString)
           
