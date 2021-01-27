@@ -45,8 +45,14 @@ jobs:
         shell: pwsh
         run: |
           $matrixData = ('${{ needs.job-1.outputs.matrixdata }}'|ConvertFrom-Json)
+          Write-Host "111111"
+          $matrixData
+          Write-Host "222222"
           $matrixData|FT
-          $matrixData['${{ matrix.mssqlversion }}']|FT
+          Write-Host "333333"
+          $cc=$matrixData['${{ matrix.mssqlversion }}']
+          $cc|FT
+          Write-Host "444444"
 
 
 
