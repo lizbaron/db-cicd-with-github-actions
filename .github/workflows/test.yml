@@ -23,7 +23,7 @@ jobs:
           $matrixData = @();
           $mssqlversions|%{$matrixData += @{$_=@{mssqlversion=$_;port=41417;quotes="'3'"}}}
           $mssqlversionsString = '{"mssqlversion":'+($mssqlversions|ConvertTo-Json -compress)+'}'
-          $matrixDataString = ($matrixData|ConvertTo-Json -compress)
+          $matrixDataString = ($matrixData|ConvertTo-Json -compress).replace("'","''")
           Write-Host ('::set-output name=mssqlversions::'+$mssqlversionsString)
           Write-Host ('::set-output name=matrixdata::'+$matrixDataString)
           
@@ -44,8 +44,9 @@ jobs:
         id: print-vars
         shell: pwsh
         run: |
-          Write-Host ${{ needs.job-1.outputs.matrixdata }}
-          #()['${{ matrix.mssqlversion }}']|FT
+          $matrixData = ('${{ needs.job-1.outputs.matrixdata }}'|ConvertFrom-Json)
+          $matrixData|FT
+          $matrixData['${{ matrix.mssqlversion }}']|FT
 
 
 
