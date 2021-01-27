@@ -14,6 +14,11 @@ on:
         description: 'Project Name'     
         required: true
         default: 'db_cicd_project'
+      msSqlVersions:
+        description: 'names of the k8s deployment files in JSON array format (e.g. ["mssql2008r2","mssql2012","mssql2014","mssql2016","mssql2017","mssql2019"])'
+        required: true
+        default: '["mssql2017","mssql2019"]'
+
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -108,6 +113,7 @@ jobs:
 
     env:
       PROJECT_NAME: ${{ github.event.inputs.projectName }}
+      MS_SQL_VERSIONS: ${{ github.event.inputs.msSqlVersions }}
       SQL_PORT_MIN: ${{ secrets.SQL_PORT_MIN }}
       SQL_PORT_MAX: ${{ secrets.SQL_PORT_MAX }}
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
@@ -121,6 +127,7 @@ jobs:
           path: cicd
 
       - name: manage variables
+        id: create-vars
         shell: pwsh
         run: |
           function Get-MD5HashOfString($string) {
@@ -135,39 +142,34 @@ jobs:
 
           $projectNameHash = (Get-MD5HashOfString($env:PROJECT_NAME)).Substring(0,10);
           $azSecretsManagerName = "sm-" + $projectNameHash;
+          $k8sNamespace = "ns-${{ github.run_id }}-${{ github.run_number }}";
 
-          $randomSqlPorts = $env:SQL_PORT_MIN..$env:SQL_PORT_MAX | Get-Random -Shuffle | Select-Object -First 6
-          $port2008R2 = $randomSqlPorts[0];
-          $port2012 = $randomSqlPorts[1];
-          $port2014 = $randomSqlPorts[2];
-          $port2016 = $randomSqlPorts[3];
-          $port2017 = $randomSqlPorts[4];
-          $port2019 = $randomSqlPorts[5];
+          $msSqlVersionArray = ($env:MS_SQL_VERSIONS|ConvertFrom-Json);
+          $msSqlVersionMatrix = '{"mssqlversions":'+$env:MS_SQL_VERSIONS+'}';
+          $randomSqlPorts = $env:SQL_PORT_MIN..$env:SQL_PORT_MAX | Get-Random -Shuffle | Select-Object -First ($msSqlVersionArray.count)
+          $msSqlPorts = @{};
+          $portNumber = 0;
+          $msSqlVersionArray|ForEach{$msSqlPorts += @{"$_"=$randomSqlPorts[$portNumber++]}}
+          $serializedPorts = ($msSqlPorts|ConvertTo-Json -compress);
 
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           Write-Host ("projectName value: {0}" -f $env:PROJECT_NAME);
-          Write-Host ("port2008R2 value: {0}" -f $port2008R2); 
-          Write-Host ("port2012 value: {0}" -f $port2012); 
-          Write-Host ("port2014 value: {0}" -f $port2014); 
-          Write-Host ("port2016 value: {0}" -f $port2016); 
-          Write-Host ("port2017 value: {0}" -f $port2017); 
-          Write-Host ("port2019 value: {0}" -f $port2019); 
+          Write-Host "Ports:";
+          $msSqlPorts;
           Write-Host ("azSecretsManagerName: {0}" -f "$azSecretsManagerName"); 
           Write-Host ("GitHub Run Id: {0}" -f "${{ github.run_id }}"); 
           Write-Host ("GitHub Run Number: {0}" -f "${{ github.run_number }}"); 
+          Write-Host ("k8sNamespace: {0}" -f "$k8sNamespace"); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
           # k8s namespaces must be no longer than 63 chars https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
-          echo "k8s-namespace=ns-${{ github.run_id }}-${{ github.run_number }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "k8s-port-mssql2008r2=$port2008R2" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "k8s-port-mssql2012=$port2012" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "k8s-port-mssql2014=$port2014" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "k8s-port-mssql2016=$port2016" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "k8s-port-mssql2017=$port2017" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "k8s-port-mssql2019=$port2019" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "k8s-azSecretsManagerName=$azSecretsManagerName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          
+          Write-Host ('::set-output name=namespace::'+$k8sNamespace);
+          Write-Host ('::set-output name=ports::'+$serializedPorts);
+          Write-Host ('::set-output name=azSecretsManagerName::'+$azSecretsManagerName);
+          Write-Host ('::set-output name=msSqlVersionMatrix::'+$msSqlVersionMatrix);
           
       # documentation: https://github.com/azure/login#configure-azure-credentials
       - name: login via az module
@@ -182,7 +184,7 @@ jobs:
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
         with:
-          keyvault: ${{ env.k8s-azSecretsManagerName }}
+          keyvault: ${{ steps.create-vars.outputs.azSecretsManagerName }}
           secrets: 'azResourceGroupName, aksClusterName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
         id: azure-secrets
 
@@ -204,27 +206,15 @@ jobs:
           # create the namespace
           kubectl config current-context
           kubectl get namespace
-          kubectl create namespace $env:k8s-namespace 
-
-      - name: publish the namespace variables to a file
-        id: set-vars
-        shell: pwsh
-        run: |
-          # grab all the k8s variables, and save them in a file we can archive and retrieve in the next matrixed jobs
-          Get-Item -Path Env:* | ConvertTo-Json | Set-Content -Path namespace-variables.json
-
-      - name: Save namespace variables to artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          if-no-files-found: error
-          name: namespace-variables
-          path: namespace-variables.json
+          kubectl create namespace ${{ steps.create-vars.outputs.namespace }} 
 
     outputs:
-      mssqlversions: ${{ steps.set-vars.outputs.mssqlversion }}
+      namespace: ${{ steps.create-vars.outputs.namespace }}
+      ports: ${{ steps.create-vars.outputs.ports }}
+      azSecretsManagerName: ${{ steps.create-vars.outputs.azSecretsManagerName }}
+      msSqlVersionMatrix: ${{ steps.create-vars.outputs.msSqlVersionMatrix }}
 
 
-# MATRIX HERE
 #################################-#####################-#############-########-#####-###-##-#
 
   test-tSQLt:
@@ -236,13 +226,16 @@ jobs:
     #     You must use a kubectl version that is within one minor version difference of your cluster. For example, a v1.2 client should work with v1.1, v1.2, and v1.3 master. Using the latest version of kubectl helps avoid unforeseen issues.
     runs-on: windows-latest # Kubectl 1.20
     env:
+      NAMESPACE: ${{ needs.set-up-k8s-env.outputs.namespace }}
+      PORTS_ARRAY: ${{ needs.set-up-k8s-env.outputs.ports }}
+      AZ_SECRETS_MANAGER_NAME: ${{ needs.set-up-k8s-env.outputs.azSecretsManagerName }}
       SA_PASSWORD: ${{ secrets.SA_PASSWORD }}
       TEST_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\TestResults
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
 
     strategy: 
       matrix:
-        mssqlversion: ${{fromJson(needs.set-up-k8s-env.outputs.mssqlversions)}}
+        mssqlversion: ${{fromJson(needs.set-up-k8s-env.outputs.msSqlVersionMatrix)}}
 
       # MDP: Fail-Fast-Behavior
       #    : https://github.community/t/why-a-matrix-step-will-be-canceled-if-another-one-failed/16184
@@ -263,33 +256,22 @@ jobs:
           path: tSQLt
           token: ${{ secrets.my_pat }}
 
-      - name: download namespace variables artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: namespace-variables
-          path: namespace-variables.json
-
       - name: load namespace variables into env
         shell: pwsh
         run: |
-          $listVars = Get-Content -Path namespace-variables.json | ConvertFrom-Json
-          $sqlPort = $listVars.Where{ $_.Key -eq "k8s-port-${{ matrix.mssqlversion }}"}.Value
-          $azSecretsManagerName = $listVars.Where{ $_.Key -eq "k8s-azSecretsManagerName"}.Value
-          $namespace = $listVars.Where{ $_.Key -eq "k8s-namespace"}.Value
+          $sqlPort = $env:PORTS_ARRAY.${{ matrix.mssqlversion }}
 
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           Write-Host ("sqlPort value: {0}" -f $sqlPort); 
-          Write-Host ("azSecretsManagerName: {0}" -f "$azSecretsManagerName"); 
-          Write-Host ("namespace: {0}" -f "$namespace"); 
+          Write-Host ("azSecretsManagerName: {0}" -f "$env:AZ_SECRETS_MANAGER_NAME"); 
+          Write-Host ("namespace: {0}" -f "$env:NAMESPACE"); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
           $sqlcmdPath = (Get-Command sqlcmd).Path.TrimEnd("\\SQLCMD.EXE");
-          echo "namespace=$namespace" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append 
           echo "sqlPort=$sqlPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "sqlcmdPath=$sqlcmdPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "azSecretsManagerName=$azSecretsManagerName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: download tSQLtAndTests artifact
         uses: actions/download-artifact@v2
@@ -311,7 +293,7 @@ jobs:
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
         with:
-          keyvault: ${{ env.azSecretsManagerName }}
+          keyvault: ${{ env.AZ_SECRETS_MANAGER_NAME }}
           secrets: 'azResourceGroupName, aksClusterName, containerRegistryName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
         id: azure-secrets
 
@@ -327,7 +309,7 @@ jobs:
         shell: pwsh
         run: |
           # MDP: set the namespace for kubectl so that you don't have to specify the namespace in all kubectl calls
-          kubectl config set-context --current --namespace=$env:namespace
+          kubectl config set-context --current --namespace=$env:NAMESPACE
 
       - name: apply deployment to aks
         shell: pwsh
@@ -388,7 +370,6 @@ jobs:
         run: |
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          # @SM --> TODO: Fix the password issue.
           Write-Host Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
           $DS = Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
 
