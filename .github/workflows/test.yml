@@ -42,11 +42,15 @@ jobs:
     strategy:
       matrix: ${{fromJson(needs.job-1.outputs.mssqlversions)}}
 
+    env:
+      MSSQLVERSIONS: ${{fromJson(needs.job-1.outputs.mssqlversions)}}
+ 
     steps:
       - name: print vars
         id: print-vars
         shell: pwsh
         run: |
+          $env:MSSQLVERSIONS
           $matrixData = ('${{ needs.job-1.outputs.matrixdata }}'|ConvertFrom-Json)
           $cc=$matrixData.${{ matrix.mssqlversion }}
           $cc|FT
