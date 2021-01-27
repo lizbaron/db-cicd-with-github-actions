@@ -20,7 +20,7 @@ jobs:
         shell: pwsh
         run: |
           $mssqlversions = @("2017","2019");
-          $matrixData = @();
+          $matrixData = @{};
           $mssqlversions|%{$matrixData += @{$_=@{mssqlversion=$_;port=41417;quotes="'3'"}}}
           $mssqlversionsString = '{"mssqlversion":'+($mssqlversions|ConvertTo-Json -compress)+'}'
           $matrixDataString = ($matrixData|ConvertTo-Json -compress).replace("'","''")
@@ -45,14 +45,9 @@ jobs:
         shell: pwsh
         run: |
           $matrixData = ('${{ needs.job-1.outputs.matrixdata }}'|ConvertFrom-Json)
-          Write-Host "111111"
-          $matrixData
-          Write-Host "222222"
-          $matrixData|FT
-          Write-Host "333333"
-          $cc=$matrixData['${{ matrix.mssqlversion }}']
+          $cc=$matrixData.${{ matrix.mssqlversion }}
           $cc|FT
-          Write-Host "444444"
+          $cc.port
 
 
 
