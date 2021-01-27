@@ -157,6 +157,7 @@ jobs:
           Write-Host ("projectName value: {0}" -f $env:PROJECT_NAME);
           Write-Host "Ports:";
           $msSqlPorts;
+          Write-Host ("msSqlVersionMatrix: {0}" -f "$msSqlVersionMatrix"); 
           Write-Host ("azSecretsManagerName: {0}" -f "$azSecretsManagerName"); 
           Write-Host ("GitHub Run Id: {0}" -f "${{ github.run_id }}"); 
           Write-Host ("GitHub Run Number: {0}" -f "${{ github.run_number }}"); 
@@ -234,8 +235,7 @@ jobs:
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
 
     strategy: 
-      matrix:
-        mssqlversion: ${{fromJson(needs.set-up-k8s-env.outputs.msSqlVersionMatrix)}}
+      matrix: ${{ fromJson(needs.set-up-k8s-env.outputs.msSqlVersionMatrix) }}
 
       # MDP: Fail-Fast-Behavior
       #    : https://github.community/t/why-a-matrix-step-will-be-canceled-if-another-one-failed/16184
