@@ -33,7 +33,7 @@ jobs:
         id: create-vars
         shell: pwsh
         run: |
-          $msSqlVersionForMatrix = '{"mssqlversion":'+$env:MS_SQL_VERSIONS+'}';
+          $msSqlVersionForMatrix = '&#x7b;"mssqlversion":'+$env:MS_SQL_VERSIONS+'&#123;';
           Write-Host ("msSqlVersionForMatrix: {0}" -f "$msSqlVersionForMatrix"); 
           Write-Host ("::set-output name=msSqlVersionForMatrix::{0}" -f "$msSqlVersionForMatrix"); 
           
