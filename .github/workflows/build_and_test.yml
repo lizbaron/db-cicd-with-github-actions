@@ -171,6 +171,7 @@ jobs:
           Write-Host ('::set-output name=ports::'+$serializedPorts);
           Write-Host ('::set-output name=azsecretsmanagername::'+$azSecretsManagerName);
           Write-Host ('::set-output name=msSqlVersionForMatrix::'+$msSqlVersionForMatrix);
+          Write-Host ("::set-output name=msSqlVersionForMatrix::{0}" -f "$msSqlVersionForMatrix"); 
           
       - name: print variables
         shell: pwsh
@@ -188,49 +189,48 @@ jobs:
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   "; 
  
-       # documentation: https://github.com/azure/login#configure-azure-credentials
-      - name: login via az module
-        uses: azure/login@v1
-        with:
-          creds: ${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}
-          enable-AzPSSession: true 
+      #  # documentation: https://github.com/azure/login#configure-azure-credentials
+      # - name: login via az module
+      #   uses: azure/login@v1
+      #   with:
+      #     creds: ${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}
+      #     enable-AzPSSession: true 
 
-      # documentation: https://github.com/Azure/get-keyvault-secrets
-      - name: get azure secrets
-        uses: Azure/get-keyvault-secrets@v1.0
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
-        with:
-          keyvault: ${{ steps.create-vars.outputs.azsecretsmanagername }}
-          secrets: 'azResourceGroupName, aksClusterName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
-        id: azure-secrets
+      # # documentation: https://github.com/Azure/get-keyvault-secrets
+      # - name: get azure secrets
+      #   uses: Azure/get-keyvault-secrets@v1.0
+      #   env:
+      #     ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
+      #   with:
+      #     keyvault: ${{ steps.create-vars.outputs.azsecretsmanagername }}
+      #     secrets: 'azResourceGroupName, aksClusterName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
+      #   id: azure-secrets
 
-      # Set the target AKS cluster.
-      - name: set aks context
-        uses: Azure/aks-set-context@v1
-        with:
-          creds: '${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}'
-          cluster-name: ${{ steps.azure-secrets.outputs.aksClusterName }}
-          resource-group: ${{ steps.azure-secrets.outputs.azResourceGroupName }}
+      # # Set the target AKS cluster.
+      # - name: set aks context
+      #   uses: Azure/aks-set-context@v1
+      #   with:
+      #     creds: '${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}'
+      #     cluster-name: ${{ steps.azure-secrets.outputs.aksClusterName }}
+      #     resource-group: ${{ steps.azure-secrets.outputs.azResourceGroupName }}
 
-      - name: create the aks namespace for this job
-        shell: pwsh
-        run: |
-          # display the values of all the environment variables
-          # MDP: secrets seem pretty secret
-          # Get-ChildItem Env: | Sort Name
+      # - name: create the aks namespace for this job
+      #   shell: pwsh
+      #   run: |
+      #     # display the values of all the environment variables
+      #     # MDP: secrets seem pretty secret
+      #     # Get-ChildItem Env: | Sort Name
 
-          # create the namespace
-          kubectl config current-context
-          kubectl get namespace
-          kubectl create namespace ${{ steps.create-vars.outputs.namespace }} 
+      #     # create the namespace
+      #     kubectl config current-context
+      #     kubectl get namespace
+      #     kubectl create namespace ${{ steps.create-vars.outputs.namespace }} 
 
     outputs:
+      ms-sql-version: ${{ steps.create-vars.outputs.msSqlVersionForMatrix }}
       namespace: ${{ steps.create-vars.outputs.namespace }}
       ports: ${{ steps.create-vars.outputs.ports }}
       azsecretsmanagername: ${{ steps.create-vars.outputs.azSecretsManagerName }}
-      mssqlversion: ${{ steps.create-vars.outputs.msSqlVersionForMatrix }}
-
 
 #################################-#####################-#############-########-#####-###-##-#
 
@@ -242,7 +242,7 @@ jobs:
     # Note: [https://kubernetes.io/docs/tasks/tools/install-kubectl/#before-you-begin]
     #     You must use a kubectl version that is within one minor version difference of your cluster. For example, a v1.2 client should work with v1.1, v1.2, and v1.3 master. Using the latest version of kubectl helps avoid unforeseen issues.
     runs-on: windows-latest # Kubectl 1.20
-    
+
     env:
       NAMESPACE: ${{ needs.set-up-k8s-env.outputs.namespace }}
       PORTS_ARRAY: ${{ needs.set-up-k8s-env.outputs.ports }}
