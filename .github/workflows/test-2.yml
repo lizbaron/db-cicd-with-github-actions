@@ -26,8 +26,8 @@ jobs:
     env:
       PROJECT_NAME: ${{ github.event.inputs.projectName }}
       MS_SQL_VERSIONS: ${{ github.event.inputs.msSqlVersions }}
-      SQL_PORT_MIN: 40000
-      SQL_PORT_MAX: 42999
+      SQL_PORT_MIN: ${{ secrets.SQL_PORT_MIN }}
+      SQL_PORT_MAX: ${{ secrets.SQL_PORT_MAX }}
 
     steps:
       - name: create vars
