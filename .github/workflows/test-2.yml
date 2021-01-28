@@ -56,10 +56,12 @@ jobs:
 
           Write-Host ('::set-output name=mssqlversion::'+$mssqlversionString)
           Write-Host ('::set-output name=matrixdata::'+$matrixDataString)
+          Write-Host ("::set-output name=msSqlVersionForMatrix::{0}" -f "$msSqlVersionForMatrix"); 
           
     outputs:
       mssqlversion: ${{ steps.create-vars.outputs.mssqlversion }}
       matrixdata: ${{ steps.create-vars.outputs.matrixdata }}
+      msSqlVersionForMatrix: ${{ steps.create-vars.outputs.msSqlVersionForMatrix }}
 
   job-2:
     name: read vars
@@ -67,7 +69,7 @@ jobs:
     runs-on: windows-latest # Kubectl 1.20
 
     strategy:
-      matrix: ${{fromJson(needs.job-1.outputs.mssqlversion)}}
+      matrix: ${{fromJson(needs.job-1.outputs.msSqlVersionForMatrix)}}
  
     steps:
       - name: print vars
