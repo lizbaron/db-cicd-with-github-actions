@@ -2,6 +2,9 @@ name: Test Stuff 2
 
 # Controls when the action will run. 
 on:
+  push:
+    branches:
+      - breaking-things-more
   workflow_dispatch: 
     inputs:
       projectName:
