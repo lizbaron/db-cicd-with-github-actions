@@ -278,9 +278,9 @@ jobs:
       - name: print variables
         shell: pwsh
         run: |
-          $ports = '${{ fromJson(needs.set-up-k8s-env.outputs.ports) }}';
-          $mssqlversion = '${{ fromJson(needs.set-up-k8s-env.outputs.mssqlversion) }}';
-          $matrix = '${{ fromJson(needs.set-up-k8s-env.outputs.matrix) }}';
+          $ports = '${{ needs.set-up-k8s-env.outputs.ports }}';
+          $mssqlversion = '${{ needs.set-up-k8s-env.outputs.mssqlversion }}';
+          $matrix = '${{ needs.set-up-k8s-env.outputs.matrix }}';
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           Write-Host ("namespace value: {0}" -f "${{ needs.set-up-k8s-env.outputs.namespace }}");
