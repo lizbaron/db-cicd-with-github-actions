@@ -25,8 +25,6 @@ jobs:
 
     env:
       MS_SQL_VERSIONS: ${{ github.event.inputs.msSqlVersions }}
-      SQL_PORT_MIN: 40000
-      SQL_PORT_MAX: 42000
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
 
     steps:
@@ -39,16 +37,8 @@ jobs:
         id: create-vars
         shell: pwsh
         run: |
-          $msSqlVersionArray = ($env:MS_SQL_VERSIONS|ConvertFrom-Json);
           $msSqlVersionForMatrix = '{"mssqlversion":'+$env:MS_SQL_VERSIONS+'}';
-
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Write-Host "";
-          Write-Host ("env:MS_SQL_VERSIONS value: {0}" -f $env:MS_SQL_VERSIONS);
           Write-Host ("msSqlVersionForMatrix: {0}" -f "$msSqlVersionForMatrix"); 
-          Write-Host "";
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-
           Write-Host ("::set-output name=msSqlVersionForMatrix::{0}" -f "$msSqlVersionForMatrix"); 
           
     outputs:
