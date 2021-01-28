@@ -172,7 +172,7 @@ jobs:
           Write-Host ('::set-output name=azsecretsmanagername::'+$azSecretsManagerName);
           # Write-Host ('::set-output name=msSqlVersionForMatrix::'+$msSqlVersionForMatrix);
           Write-Host ("::set-output name=msSqlVersionForMatrix::{0}" -f "$msSqlVersionForMatrix"); 
-          Write-Host ("::set-output name=matrix::{\"include\":[{\"project\":\"foo\",\"config\":\"Debug\"},{\"project\":\"bar\",\"config\":\"Release\"}]}")
+          Write-Host ("::set-output name=matrix::{`"include`":[{`"project`":`"foo`",`"config`":`"Debug`"},{`"project`":`"bar`",`"config`":`"Release`"}]}")
           
       - name: print variables
         shell: pwsh
