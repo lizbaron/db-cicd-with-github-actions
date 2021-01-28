@@ -24,11 +24,10 @@ jobs:
     runs-on: windows-latest # Kubectl 1.20
 
     env:
-      PROJECT_NAME: ${{ github.event.inputs.projectName }}
       MS_SQL_VERSIONS: ${{ github.event.inputs.msSqlVersions }}
       SQL_PORT_MIN: 40000
       SQL_PORT_MAX: 42000
-      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
+#      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
 
     steps:
       - name: Checkout self
@@ -43,30 +42,16 @@ jobs:
           $msSqlVersionArray = ($env:MS_SQL_VERSIONS|ConvertFrom-Json);
           $msSqlVersionForMatrix = '{"mssqlversion":'+$env:MS_SQL_VERSIONS+'}';
 
-          $randomSqlPorts = $env:SQL_PORT_MIN..$env:SQL_PORT_MAX | Get-Random -Shuffle | Select-Object -First ($msSqlVersionArray.count)
-          $msSqlPorts = @{};
-          $portNumber = 0;
-          $msSqlVersionArray|ForEach{$msSqlPorts += @{"$_"=$randomSqlPorts[$portNumber++]}}
-          $serializedPorts = ($msSqlPorts|ConvertTo-Json -compress);
-          
-          $matrixDataString = ($msSqlPorts|ConvertTo-Json -compress).replace("'","''")
-
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          Write-Host ("env:PROJECT_NAME value: {0}" -f $env:PROJECT_NAME);
           Write-Host ("env:MS_SQL_VERSIONS value: {0}" -f $env:MS_SQL_VERSIONS);
           Write-Host ("msSqlVersionForMatrix: {0}" -f "$msSqlVersionForMatrix"); 
-          Write-Host ("matrixDataString: {0}" -f "$matrixDataString"); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
-
-          Write-Host ('::set-output name=matrixdata::'+$matrixDataString)
           Write-Host ("::set-output name=msSqlVersionForMatrix::{0}" -f "$msSqlVersionForMatrix"); 
           
     outputs:
-      mssqlversion: ${{ steps.create-vars.outputs.mssqlversion }}
-      matrixdata: ${{ steps.create-vars.outputs.matrixdata }}
       msSqlVersionForMatrix: ${{ steps.create-vars.outputs.msSqlVersionForMatrix }}
 
   job-2:
@@ -82,11 +67,7 @@ jobs:
         id: print-vars
         shell: pwsh
         run: |
-          $matrixData = ('${{ needs.job-1.outputs.matrixdata }}'|ConvertFrom-Json)
-          $cc=$matrixData.${{ matrix.mssqlversion }}
-          $cc|FT
-          $cc.port
-
+          Write-Host "${{ matrix.mssqlversion }}";
 
 
 
