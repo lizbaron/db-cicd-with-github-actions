@@ -175,12 +175,16 @@ jobs:
       - name: print variables
         shell: pwsh
         run: |
+          $ports = '${{ steps.create-vars.outputs.ports }}';
+          $mssqlversion = '${{ steps.create-vars.outputs.msSqlVersionForMatrix }}';
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           Write-Host ("namespace value: {0}" -f "${{ steps.create-vars.outputs.namespace }}");
           Write-Host ("ports: {0}" -f '${{ steps.create-vars.outputs.ports }}'); 
+          Write-Host ("ports length: {0}" -f $ports.length); 
           Write-Host ("azsecretsmanagername: {0}" -f "${{ steps.create-vars.outputs.azSecretsManagerName }}"); 
           Write-Host ("mssqlversion: {0}" -f '${{ steps.create-vars.outputs.msSqlVersionForMatrix }}'); 
+          Write-Host ("mssqlversion length: {0}" -f $mssqlversion.length); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   "; 
  
