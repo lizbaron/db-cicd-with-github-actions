@@ -23,6 +23,10 @@ jobs:
     name: set vars
     runs-on: windows-latest # Kubectl 1.20
 
+    env:
+      PROJECT_NAME: ${{ github.event.inputs.projectName }}
+      MS_SQL_VERSIONS: ${{ github.event.inputs.msSqlVersions }}
+
     steps:
       - name: create vars
         id: create-vars
@@ -33,12 +37,18 @@ jobs:
           $matrixData = @{};
           $mssqlversion|%{$matrixData += @{$_=@{mssqlversion=$_;port=41417;quotes="'3'"}}}
 
-          $mssqlversionString = '{"mssqlversion":'+($mssqlversion|ConvertTo-Json -compress)+'}'
           $matrixDataString = ($matrixData|ConvertTo-Json -compress).replace("'","''")
+
+          # The following two lines are equivalent-ish
+          $mssqlversionString = '{"mssqlversion":'+($mssqlversion|ConvertTo-Json -compress)+'}'
+          $msSqlVersionForMatrix = '{"mssqlversion":'+$env:MS_SQL_VERSIONS+'}';
 
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
+          Write-Host ("env:PROJECT_NAME value: {0}" -f $env:PROJECT_NAME);
+          Write-Host ("env:MS_SQL_VERSIONS value: {0}" -f $env:MS_SQL_VERSIONS);
           Write-Host ("mssqlversionString: {0}" -f "$mssqlversionString"); 
+          Write-Host ("msSqlVersionForMatrix: {0}" -f "$msSqlVersionForMatrix"); 
           Write-Host ("matrixDataString: {0}" -f "$matrixDataString"); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
