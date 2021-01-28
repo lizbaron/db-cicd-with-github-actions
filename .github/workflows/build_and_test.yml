@@ -247,7 +247,6 @@ jobs:
 
     env:
       NAMESPACE: ${{ needs.set-up-k8s-env.outputs.namespace }}
-      PORTS_ARRAY: ${{ fromJson(needs.set-up-k8s-env.outputs.ports) }}
       AZ_SECRETS_MANAGER_NAME: ${{ needs.set-up-k8s-env.outputs.azsecretsmanagername }}
       SA_PASSWORD: ${{ secrets.SA_PASSWORD }}
       TEST_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\TestResults
