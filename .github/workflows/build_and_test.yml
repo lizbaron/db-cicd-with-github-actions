@@ -139,7 +139,6 @@ jobs:
   set-up-k8s-env:
 #    needs: build-tSQLt
     name: set up k8s namespace
-    if: ${{ false }}
 
     runs-on: windows-latest # Kubectl 1.20
 
@@ -286,7 +285,7 @@ jobs:
 
   test-tSQLt:
     name: test build artifacts
-    needs: job-1
+    needs: set-up-k8s-env
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
     # Note: [https://kubernetes.io/docs/tasks/tools/install-kubectl/#before-you-begin]
@@ -301,7 +300,7 @@ jobs:
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
 
     strategy:
-      matrix: ${{fromJson(needs.job-1.outputs.mssqlversion)}}
+      matrix: ${{fromJson(needs.set-up-k8s-env.outputs.mssqlversion)}}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -310,10 +309,9 @@ jobs:
         id: print-vars
         shell: pwsh
         run: |
-          $matrixData = ('${{ needs.job-1.outputs.matrixdata }}'|ConvertFrom-Json)
-          $cc=$matrixData.${{ matrix.mssqlversion }}
+          $ports = ('${{ needs.set-up-k8s-env.outputs.ports }}'|ConvertFrom-Json)
+          $cc=$ports.${{ matrix.mssqlversion }}
           $cc|FT
-          $cc.port
 
       - name: Checkout self
         uses: actions/checkout@v2
