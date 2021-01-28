@@ -253,8 +253,8 @@ jobs:
       TEST_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\TestResults
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
 
-#    strategy: 
-#      matrix: ${{ fromJson(needs.set-up-k8s-env.outputs.mssqlversion) }}
+    strategy: 
+      matrix: ${{ fromJson(needs.set-up-k8s-env.outputs.mssqlversion) }}
 
       # MDP: Fail-Fast-Behavior
       #    : https://github.community/t/why-a-matrix-step-will-be-canceled-if-another-one-failed/16184
@@ -278,17 +278,13 @@ jobs:
       - name: print variables
         shell: pwsh
         run: |
-          $ports = '${{ needs.set-up-k8s-env.outputs.ports }}';
-          $mssqlversion = '${{ needs.set-up-k8s-env.outputs.mssqlversion }}';
-          $matrix = '${{ needs.set-up-k8s-env.outputs.matrix }}';
+          $ports = ('${{ needs.set-up-k8s-env.outputs.ports }}'|ConvertFrom-Json)  ;
+          $mssqlversion = '${{ matrix.mssqlversion }}';
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          Write-Host ("namespace value: {0}" -f "${{ needs.set-up-k8s-env.outputs.namespace }}");
-          Write-Host ("ports: {0}" -f '${{ needs.set-up-k8s-env.outputs.ports }}');
+          Write-Host ("matrix.mssqlversion: {0}" -f "${{ matrix.mssqlversion }}");
+          Write-Host ("ports: {0}" -f '$ports');
           Write-Host ("ports length: {0}" -f $ports.length); 
-          Write-Host ("azsecretsmanagername: {0}" -f "${{ needs.set-up-k8s-env.outputs.azsecretsmanagername }}"); 
-          Write-Host ("mssqlversion: {0}" -f '${{ needs.set-up-k8s-env.outputs.mssqlversion }}'); 
-          Write-Host ("mssqlversion length: {0}" -f $mssqlversion.length); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   "; 
  
