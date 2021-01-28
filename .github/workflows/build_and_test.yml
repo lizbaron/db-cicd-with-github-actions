@@ -187,6 +187,7 @@ jobs:
           Write-Host ("azsecretsmanagername: {0}" -f "${{ steps.create-vars.outputs.azSecretsManagerName }}"); 
           Write-Host ("mssqlversion: {0}" -f '${{ steps.create-vars.outputs.msSqlVersionForMatrix }}'); 
           Write-Host ("mssqlversion length: {0}" -f $mssqlversion.length); 
+          Write-Host ("matrix: {0}" -f '${{ steps.create-vars.outputs.matrix }}'); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   "; 
  
