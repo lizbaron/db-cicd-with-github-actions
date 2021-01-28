@@ -178,7 +178,7 @@ jobs:
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           Write-Host ("namespace value: {0}" -f "${{ steps.create-vars.outputs.namespace }}");
-          Write-Host ("ports: {0}" -f "${{ steps.create-vars.outputs.ports }}"); 
+          Write-Host ("ports: {0}" -f '${{ steps.create-vars.outputs.ports }}'); 
           Write-Host ("azsecretsmanagername: {0}" -f "${{ steps.create-vars.outputs.azSecretsManagerName }}"); 
           Write-Host ("mssqlversion: {0}" -f "${{ steps.create-vars.outputs.msSqlVersionForMatrix }}"); 
           Write-Host "";
