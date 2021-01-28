@@ -170,7 +170,7 @@ jobs:
           Write-Host ('::set-output name=namespace::'+$k8sNamespace);
           Write-Host ('::set-output name=ports::'+$serializedPorts);
           Write-Host ('::set-output name=azsecretsmanagername::'+$azSecretsManagerName);
-          Write-Host ('::set-output name=msSqlVersionForMatrix::'+$msSqlVersionForMatrix);
+          # Write-Host ('::set-output name=msSqlVersionForMatrix::'+$msSqlVersionForMatrix);
           Write-Host ("::set-output name=msSqlVersionForMatrix::{0}" -f "$msSqlVersionForMatrix"); 
           
       - name: print variables
