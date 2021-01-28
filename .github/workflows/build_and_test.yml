@@ -17,7 +17,7 @@ on:
       msSqlVersions:
         description: 'names of the k8s deployment files in JSON array format (e.g. ["mssql2008r2","mssql2012","mssql2014","mssql2016","mssql2017","mssql2019"])'
         required: true
-        default: '["mssql2017","mssql2019"]'
+        default: '["mssql2016"]'
 
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -126,7 +126,7 @@ jobs:
         with:
           path: cicd
 
-      - name: manage variables
+      - name: create variables
         id: create-vars
         shell: pwsh
         run: |
@@ -145,7 +145,8 @@ jobs:
           $k8sNamespace = "ns-${{ github.run_id }}-${{ github.run_number }}";
 
           $msSqlVersionArray = ($env:MS_SQL_VERSIONS|ConvertFrom-Json);
-          $msSqlVersionMatrix = '{"mssqlversions":'+$env:MS_SQL_VERSIONS+'}';
+          $msSqlVersionMatrix = '{"mssqlversion":'+$env:MS_SQL_VERSIONS+'}';
+          
           $randomSqlPorts = $env:SQL_PORT_MIN..$env:SQL_PORT_MAX | Get-Random -Shuffle | Select-Object -First ($msSqlVersionArray.count)
           $msSqlPorts = @{};
           $portNumber = 0;
