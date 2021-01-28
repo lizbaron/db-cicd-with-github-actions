@@ -39,7 +39,7 @@ jobs:
           Write-Host ('::set-output name=matrixdata::'+$matrixDataString)
           
     outputs:
-      mssqlversions: ${{ steps.create-vars.outputs.mssqlversion }}
+      mssqlversion: ${{ steps.create-vars.outputs.mssqlversion }}
       matrixdata: ${{ steps.create-vars.outputs.matrixdata }}
 
   job-2:
