@@ -235,23 +235,24 @@ jobs:
 #################################-#####################-#############-########-#####-###-##-#
 
   test-tSQLt:
-    needs: set-up-k8s-env
     name: test build artifacts
+    needs: set-up-k8s-env
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
     # Note: [https://kubernetes.io/docs/tasks/tools/install-kubectl/#before-you-begin]
     #     You must use a kubectl version that is within one minor version difference of your cluster. For example, a v1.2 client should work with v1.1, v1.2, and v1.3 master. Using the latest version of kubectl helps avoid unforeseen issues.
     runs-on: windows-latest # Kubectl 1.20
+    
     env:
       NAMESPACE: ${{ needs.set-up-k8s-env.outputs.namespace }}
-#      PORTS_ARRAY: ${{ needs.set-up-k8s-env.outputs.ports }}
+      PORTS_ARRAY: ${{ needs.set-up-k8s-env.outputs.ports }}
       AZ_SECRETS_MANAGER_NAME: ${{ needs.set-up-k8s-env.outputs.azsecretsmanagername }}
       SA_PASSWORD: ${{ secrets.SA_PASSWORD }}
       TEST_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\TestResults
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
 
-    strategy: 
-      matrix: ${{ needs.set-up-k8s-env.outputs.mssqlversion }}
+#    strategy: 
+#      matrix: ${{ needs.set-up-k8s-env.outputs.mssqlversion }}
 
       # MDP: Fail-Fast-Behavior
       #    : https://github.community/t/why-a-matrix-step-will-be-canceled-if-another-one-failed/16184
@@ -272,155 +273,171 @@ jobs:
           path: tSQLt
           token: ${{ secrets.my_pat }}
 
-      - name: load namespace variables into env
+      - name: print variables
         shell: pwsh
         run: |
-          $sqlPort = $env:PORTS_ARRAY.${{ matrix.mssqlversion }}
-
+          $ports = '${{ needs.set-up-k8s-env.outputs.ports }}';
+          $mssqlversion = '${{ needs.set-up-k8s-env.outputs.mssqlversion }}';
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          Write-Host ("sqlPort value: {0}" -f $sqlPort); 
-          Write-Host ("azSecretsManagerName: {0}" -f "$env:AZ_SECRETS_MANAGER_NAME"); 
-          Write-Host ("namespace: {0}" -f "$env:NAMESPACE"); 
+          Write-Host ("namespace value: {0}" -f "${{ needs.set-up-k8s-env.outputs.namespace }}");
+          Write-Host ("ports: {0}" -f '${{ needs.set-up-k8s-env.outputs.ports }}');
+          Write-Host ("ports length: {0}" -f $ports.length); 
+          Write-Host ("azsecretsmanagername: {0}" -f "${{ needs.set-up-k8s-env.outputs.azsecretsmanagername }}"); 
+          Write-Host ("mssqlversion: {0}" -f '${{ needs.set-up-k8s-env.outputs.mssqlversion }}'); 
+          Write-Host ("mssqlversion length: {0}" -f $mssqlversion.length); 
           Write-Host "";
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   "; 
+ 
+      # - name: load namespace variables into env
+      #   shell: pwsh
+      #   run: |
+      #     $sqlPort = $env:PORTS_ARRAY.${{ matrix.mssqlversion }}
 
-          $sqlcmdPath = (Get-Command sqlcmd).Path.TrimEnd("\\SQLCMD.EXE");
-          echo "sqlPort=$sqlPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "sqlcmdPath=$sqlcmdPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     Write-Host "";
+      #     Write-Host ("sqlPort value: {0}" -f $sqlPort); 
+      #     Write-Host ("azSecretsManagerName: {0}" -f "$env:AZ_SECRETS_MANAGER_NAME"); 
+      #     Write-Host ("namespace: {0}" -f "$env:NAMESPACE"); 
+      #     Write-Host "";
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
-      - name: download tSQLtAndTests artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: tSQLtAndTests
-          path: "${{ github.workspace }}\\tSQLt\\Build_Artifact"
+      #     $sqlcmdPath = (Get-Command sqlcmd).Path.TrimEnd("\\SQLCMD.EXE");
+      #     echo "sqlPort=$sqlPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      #     echo "sqlcmdPath=$sqlcmdPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      # - name: download tSQLtAndTests artifact
+      #   uses: actions/download-artifact@v2
+      #   with:
+      #     name: tSQLtAndTests
+      #     path: "${{ github.workspace }}\\tSQLt\\Build_Artifact"
           
-      # documentation: https://github.com/azure/login#configure-azure-credentials
-      - name: login via az module
-        uses: azure/login@v1
-        with:
-          creds: ${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}
-          enable-AzPSSession: true 
+      # # documentation: https://github.com/azure/login#configure-azure-credentials
+      # - name: login via az module
+      #   uses: azure/login@v1
+      #   with:
+      #     creds: ${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}
+      #     enable-AzPSSession: true 
 
-      # documentation: https://github.com/Azure/get-keyvault-secrets
-      - name: get azure secrets
-      # TODO: Consider deleting this task and getting these manually and setting them as secrets.
-        uses: Azure/get-keyvault-secrets@v1.0
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
-        with:
-          keyvault: ${{ env.AZ_SECRETS_MANAGER_NAME }}
-          secrets: 'azResourceGroupName, aksClusterName, containerRegistryName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
-        id: azure-secrets
+      # # documentation: https://github.com/Azure/get-keyvault-secrets
+      # - name: get azure secrets
+      # # TODO: Consider deleting this task and getting these manually and setting them as secrets.
+      #   uses: Azure/get-keyvault-secrets@v1.0
+      #   env:
+      #     ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
+      #   with:
+      #     keyvault: ${{ env.AZ_SECRETS_MANAGER_NAME }}
+      #     secrets: 'azResourceGroupName, aksClusterName, containerRegistryName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
+      #   id: azure-secrets
 
-      # Set the target AKS cluster.
-      - name: set aks context
-        uses: Azure/aks-set-context@v1
-        with:
-          creds: '${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}'
-          cluster-name: ${{ steps.azure-secrets.outputs.aksClusterName }}
-          resource-group: ${{ steps.azure-secrets.outputs.azResourceGroupName }}
+      # # Set the target AKS cluster.
+      # - name: set aks context
+      #   uses: Azure/aks-set-context@v1
+      #   with:
+      #     creds: '${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}'
+      #     cluster-name: ${{ steps.azure-secrets.outputs.aksClusterName }}
+      #     resource-group: ${{ steps.azure-secrets.outputs.azResourceGroupName }}
 
-      - name: set the aks namespace for kubectl
-        shell: pwsh
-        run: |
-          # MDP: set the namespace for kubectl so that you don't have to specify the namespace in all kubectl calls
-          kubectl config set-context --current --namespace=$env:NAMESPACE
+      # - name: set the aks namespace for kubectl
+      #   shell: pwsh
+      #   run: |
+      #     # MDP: set the namespace for kubectl so that you don't have to specify the namespace in all kubectl calls
+      #     kubectl config set-context --current --namespace=$env:NAMESPACE
 
-      - name: apply deployment to aks
-        shell: pwsh
-        run: |
-          kubectl get namespace
+      # - name: apply deployment to aks
+      #   shell: pwsh
+      #   run: |
+      #     kubectl get namespace
 
-          # @SM --> TODO: We should seriously consider using helm to deploy a chart, so that we can do a more socially acceptable token replacement in the deployment.yaml file.
-          ((Get-Content -path ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml -Raw) -replace 'image: containerRegistryName/',"image: ${{ steps.azure-secrets.outputs.containerRegistryName }}.azurecr.io") | Set-Content -Path ${{ matrix.mssqlversion }}.deployment.yml
-          kubectl apply -f ${{ matrix.mssqlversion }}.deployment.yml
-          kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=$env:sqlPort --target-port=1433
-          kubectl wait pod --for=condition=Ready --all --timeout 600s # Experimental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
+      #     # @SM --> TODO: We should seriously consider using helm to deploy a chart, so that we can do a more socially acceptable token replacement in the deployment.yaml file.
+      #     ((Get-Content -path ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml -Raw) -replace 'image: containerRegistryName/',"image: ${{ steps.azure-secrets.outputs.containerRegistryName }}.azurecr.io") | Set-Content -Path ${{ matrix.mssqlversion }}.deployment.yml
+      #     kubectl apply -f ${{ matrix.mssqlversion }}.deployment.yml
+      #     kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=$env:sqlPort --target-port=1433
+      #     kubectl wait pod --for=condition=Ready --all --timeout 600s # Experimental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
           
-      - name: check service
-        shell: pwsh
-        timeout-minutes: 3
-        run: |
-          $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
+      # - name: check service
+      #   shell: pwsh
+      #   timeout-minutes: 3
+      #   run: |
+      #     $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
 
-          while ([String]::IsNullOrWhiteSpace($ipAddress))
-          {
-            Start-Sleep -Seconds 10
-            $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
-          }
+      #     while ([String]::IsNullOrWhiteSpace($ipAddress))
+      #     {
+      #       Start-Sleep -Seconds 10
+      #       $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
+      #     }
 
-          # add environment variables
-          #---------------------------------------------------------------------------------------------------#
-          # IMPORTANT (and, you've got to be kidding me):                                                     #
-          # The space between the comma and the sqlPort is absolutely required to make the ANT Task work.     #
-          #---------------------------------------------------------------------------------------------------#
-          $fqdnAndPort = $ipAddress + ", " + $env:sqlPort;
-          #-----------------------------^---------------------------------------------------------------------#
-          #-----------------------------^---------------------------------------------------------------------#
+      #     # add environment variables
+      #     #---------------------------------------------------------------------------------------------------#
+      #     # IMPORTANT (and, you've got to be kidding me):                                                     #
+      #     # The space between the comma and the sqlPort is absolutely required to make the ANT Task work.     #
+      #     #---------------------------------------------------------------------------------------------------#
+      #     $fqdnAndPort = $ipAddress + ", " + $env:sqlPort;
+      #     #-----------------------------^---------------------------------------------------------------------#
+      #     #-----------------------------^---------------------------------------------------------------------#
 
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Write-Host "";
-          Write-Host ("fqdnAndPort value: {0}" -f $fqdnAndPort); 
-          Write-Host "";
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          echo "fqdnAndPort=$fqdnAndPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     Write-Host "";
+      #     Write-Host ("fqdnAndPort value: {0}" -f $fqdnAndPort); 
+      #     Write-Host "";
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     echo "fqdnAndPort=$fqdnAndPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: check sql server instance and update sa password
-        shell: pwsh
-        run: |
-          kubectl exec service/${{ matrix.mssqlversion }}-service -- powershell.exe -c 'Get-Service MSSQL*'
-          Write-Host "";
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Write-Host "";
-          Write-Host "SQL Server Info";
-          kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -l 60 -Q "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;"
-          Write-Host "";
-          Write-Host "Update sa password";
-          kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -l 60 -Q "ALTER LOGIN sa with password='"+$env:SA_PASSWORD+"' ,CHECK_POLICY=OFF,CHECK_EXPIRATION=OFF;"
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      # - name: check sql server instance and update sa password
+      #   shell: pwsh
+      #   run: |
+      #     kubectl exec service/${{ matrix.mssqlversion }}-service -- powershell.exe -c 'Get-Service MSSQL*'
+      #     Write-Host "";
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     Write-Host "";
+      #     Write-Host "SQL Server Info";
+      #     kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -l 60 -Q "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;"
+      #     Write-Host "";
+      #     Write-Host "Update sa password";
+      #     kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -l 60 -Q "ALTER LOGIN sa with password='"+$env:SA_PASSWORD+"' ,CHECK_POLICY=OFF,CHECK_EXPIRATION=OFF;"
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
 
-      - name: print sql version info
-        shell: pwsh
-        run: |
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Write-Host "";
-          Write-Host Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
-          $DS = Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
+      # - name: print sql version info
+      #   shell: pwsh
+      #   run: |
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     Write-Host "";
+      #     Write-Host Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
+      #     $DS = Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
 
-          $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
-          Write-Host "";
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
+      #     Write-Host "";
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
-      # @SM --> TODO: jUnit results
-      - name: ant Build/tSQLt.validatebuild.xml
-        working-directory: ${{ github.workspace }}\tSQLt\Build
-        run: ant -buildfile tSQLt.validatebuild.xml all -D"db.server"="$env:fqdnAndPort" -D"db.name"=tSQLt_dev -D"db.login"="-U sa -P $env:SA_PASSWORD" -D"sqlcmd.path"="$env:sqlcmdPath"
+      # # @SM --> TODO: jUnit results
+      # - name: ant Build/tSQLt.validatebuild.xml
+      #   working-directory: ${{ github.workspace }}\tSQLt\Build
+      #   run: ant -buildfile tSQLt.validatebuild.xml all -D"db.server"="$env:fqdnAndPort" -D"db.name"=tSQLt_dev -D"db.login"="-U sa -P $env:SA_PASSWORD" -D"sqlcmd.path"="$env:sqlcmdPath"
 
-      - name: create junit artifact
-        shell: pwsh
-        run: |
-          $basePath = "${{ github.workspace }}";
-          $basePath;
+      # - name: create junit artifact
+      #   shell: pwsh
+      #   run: |
+      #     $basePath = "${{ github.workspace }}";
+      #     $basePath;
 
-          $ArtifactPath = "$env:TEST_ARTIFACT_DIR\";
-          $ArtifactPath;
+      #     $ArtifactPath = "$env:TEST_ARTIFACT_DIR\";
+      #     $ArtifactPath;
 
-          New-Item -Path $ArtifactPath -ItemType directory -Force
+      #     New-Item -Path $ArtifactPath -ItemType directory -Force
 
-          (Get-ChildItem $basePath -recurse)| Out-File -FilePath $ArtifactPath+"dir.txt"
-          (Get-ChildItem $basePath -recurse -include "*TestResults*.xml").FullName; 
+      #     (Get-ChildItem $basePath -recurse)| Out-File -FilePath $ArtifactPath+"dir.txt"
+      #     (Get-ChildItem $basePath -recurse -include "*TestResults*.xml").FullName; 
 
-          (Get-ChildItem $basePath -recurse -include "*TestResults*.xml").FullName|Copy-Item -Destination $ArtifactPath -recurse -PassThru
-          Set-Content -Path ($ArtifactPath+"CommitId.txt") -Value "${{ github.sha }}"
+      #     (Get-ChildItem $basePath -recurse -include "*TestResults*.xml").FullName|Copy-Item -Destination $ArtifactPath -recurse -PassThru
+      #     Set-Content -Path ($ArtifactPath+"CommitId.txt") -Value "${{ github.sha }}"
 
-      - name: archive junit test artifact
-        uses: actions/upload-artifact@v2
-        with:
-          if-no-files-found: error
-          name: jUnitTests-${{ matrix.mssqlversion }}
-          path: "${{ env.test_artifact_dir }}\\"
+      # - name: archive junit test artifact
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     if-no-files-found: error
+      #     name: jUnitTests-${{ matrix.mssqlversion }}
+      #     path: "${{ env.test_artifact_dir }}\\"
 
 # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
 ##--##--##--##--##--##--##--##--##--##---##--##--##--##--##--##--##--##--##--##
