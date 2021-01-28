@@ -1,10 +1,18 @@
-name: Test Stuff
+name: Test Stuff 2
 
 # Controls when the action will run. 
 on:
-  push:
-    branches:
-      - breaking-things
+  workflow_dispatch: 
+    inputs:
+      projectName:
+        description: 'Project Name'     
+        required: true
+        default: 'db_cicd_project'
+      msSqlVersions:
+        description: 'names of the k8s deployment files in JSON array format (e.g. ["mssql2008r2","mssql2012","mssql2014","mssql2016","mssql2017","mssql2019"])'
+        required: true
+        default: '["mssql2016"]'
+
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
