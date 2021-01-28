@@ -6,6 +6,11 @@ on:
     branches:
       - breaking-things
   workflow_dispatch: 
+    inputs:
+      msSqlVersions:
+        description: 'names of the k8s deployment files in JSON array format (e.g. ["mssql2008r2","mssql2012","mssql2014","mssql2016","mssql2017","mssql2019"])'
+        required: true
+        default: '["mssql2016"]'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -13,6 +18,9 @@ jobs:
   job-1:
     name: set vars
     runs-on: windows-latest # Kubectl 1.20
+
+    env:
+      MS_SQL_VERSIONS: ${{ github.event.inputs.msSqlVersions }}
 
     steps:
       - name: create vars
@@ -24,7 +32,8 @@ jobs:
           $matrixData = @{};
           $mssqlversion|%{$matrixData += @{$_=@{mssqlversion=$_;port=41417;quotes="'3'"}}}
 
-          $mssqlversionString = '{"mssqlversion":'+($mssqlversion|ConvertTo-Json -compress)+'}'
+          $mssqlversionString = '{"mssqlversion":'+$env:MS_SQL_VERSIONS+'}';
+
           $matrixDataString = ($matrixData|ConvertTo-Json -compress).replace("'","''")
 
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
