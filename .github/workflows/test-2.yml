@@ -2,37 +2,32 @@ name: Test Stuff 2
 
 # Controls when the action will run. 
 on:
-#  push:
-#    branches:
-#      - breaking-thing-more
-  workflow_dispatch: 
-    inputs:
-      projectName:
-        description: 'Project Name'     
-        required: true
-        default: 'db_cicd_project'
-      msSqlVersions:
-        description: 'names of the k8s deployment files in JSON array format (e.g. ["mssql2008r2","mssql2012","mssql2014","mssql2016","mssql2017","mssql2019"])'
-        required: true
-        default: '["mssql2016"]'
+ push:
+   branches:
+     - breaking-thing-more
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
 
-  job-1:
-    name: set vars
-    runs-on: windows-latest # Kubectl 1.20
-
-    env:
-      MS_SQL_VERSIONS: ${{ github.event.inputs.msSqlVersions }}
-#      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
-      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets.AZ_SP_CRED_TEST_202101230 }}
+  job-set-secret:
+    runs-on:  windows-latest
 
     steps:
-      - name: Checkout self
-        uses: actions/checkout@v2
-        with:
-          path: cicd
+      - name: create secret
+        id: create-secret
+        shell: pwsh
+        run: |
+          # something goes here.
+
+  job-1:
+    name: set vars
+    runs-on: windows-latest
+
+    env:
+      MS_SQL_VERSIONS: '["mssql2016"]'
+      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets.AZ_SP_CRED_TEST_20210123 }}
+
+    steps:
 
       - name: create vars
         id: create-vars
@@ -48,7 +43,7 @@ jobs:
   job-2:
     name: read vars
     needs: job-1
-    runs-on: windows-latest # Kubectl 1.20
+    runs-on: windows-latest
 
     strategy:
       matrix: ${{fromJson(needs.job-1.outputs.msSqlVersionForMatrix)}}
