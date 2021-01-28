@@ -136,24 +136,6 @@ jobs:
       mssqlversion: ${{ steps.create-vars.outputs.mssqlversion }}
       matrixdata: ${{ steps.create-vars.outputs.matrixdata }}
 
-  job-2:
-    name: read vars
-    needs: job-1
-    runs-on: windows-latest # Kubectl 1.20
-
-    strategy:
-      matrix: ${{fromJson(needs.job-1.outputs.mssqlversion)}}
- 
-    steps:
-      - name: print vars
-        id: print-vars
-        shell: pwsh
-        run: |
-          $matrixData = ('${{ needs.job-1.outputs.matrixdata }}'|ConvertFrom-Json)
-          $cc=$matrixData.${{ matrix.mssqlversion }}
-          $cc|FT
-          $cc.port
-
   set-up-k8s-env:
 #    needs: build-tSQLt
     name: set up k8s namespace
@@ -283,11 +265,28 @@ jobs:
       azsecretsmanagername: ${{ steps.create-vars.outputs.azSecretsManagerName }}
 
 #################################-#####################-#############-########-#####-###-##-#
+  job-2:
+    name: read vars
+    needs: job-1
+    runs-on: windows-latest # Kubectl 1.20
+
+    strategy:
+      matrix: ${{fromJson(needs.job-1.outputs.mssqlversion)}}
+
+    steps:
+      - name: print vars
+        id: print-vars
+        shell: pwsh
+        run: |
+          $matrixData = ('${{ needs.job-1.outputs.matrixdata }}'|ConvertFrom-Json)
+          $cc=$matrixData.${{ matrix.mssqlversion }}
+          $cc|FT
+          $cc.port
+
 
   test-tSQLt:
     name: test build artifacts
-    needs: set-up-k8s-env
-    if: ${{ false }}
+    needs: job-1
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
     # Note: [https://kubernetes.io/docs/tasks/tools/install-kubectl/#before-you-begin]
@@ -301,15 +300,20 @@ jobs:
       TEST_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\TestResults
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
 
-    strategy: 
-      matrix: ${{ fromJson(needs.set-up-k8s-env.outputs.mssqlversion) }}
-
-      # MDP: Fail-Fast-Behavior
-      #    : https://github.community/t/why-a-matrix-step-will-be-canceled-if-another-one-failed/16184
-      fail-fast: false
+    strategy:
+      matrix: ${{fromJson(needs.job-1.outputs.mssqlversion)}}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+
+      - name: print vars
+        id: print-vars
+        shell: pwsh
+        run: |
+          $matrixData = ('${{ needs.job-1.outputs.matrixdata }}'|ConvertFrom-Json)
+          $cc=$matrixData.${{ matrix.mssqlversion }}
+          $cc|FT
+          $cc.port
 
       - name: Checkout self
         uses: actions/checkout@v2
