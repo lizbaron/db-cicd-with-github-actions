@@ -26,9 +26,9 @@ jobs:
     env:
       PROJECT_NAME: ${{ github.event.inputs.projectName }}
       MS_SQL_VERSIONS: ${{ github.event.inputs.msSqlVersions }}
-      SQL_PORT_MIN: ${{ secrets.SQL_PORT_MIN }}
-      SQL_PORT_MAX: ${{ secrets.SQL_PORT_MAX }}
-#      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
+      SQL_PORT_MIN: 40000
+      SQL_PORT_MAX: 42000
+      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
 
     steps:
       - name: Checkout self
