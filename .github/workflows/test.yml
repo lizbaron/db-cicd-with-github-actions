@@ -2,9 +2,6 @@ name: Test Stuff
 
 # Controls when the action will run. 
 on:
-  push:
-    branches:
-      - breaking-things
   workflow_dispatch: 
     inputs:
       msSqlVersions:
