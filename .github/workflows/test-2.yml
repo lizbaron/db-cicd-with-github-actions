@@ -9,23 +9,20 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
 
-  job-set-secret:
-    runs-on:  windows-latest
-
-    steps:
-      - name: create secret
-        id: create-secret
-        shell: pwsh
-        run: |
-          # something goes here.
-
   job-1:
     name: set vars
     runs-on: windows-latest
 
     env:
       MS_SQL_VERSIONS: '["mssql2016"]'
-#      JSON_SECRET: ${{ secrets.JSON_SECRET }}
+      JSON_SECRET: ${{ secrets.JSON_SECRET }}
+      # Test 1:  { "ID":"12334" }
+      # Test 2:
+      # { 
+      #   "ID":"12334"
+      # }
+
+
 
     steps:
 
