@@ -14,15 +14,8 @@ jobs:
     runs-on: windows-latest
 
     env:
-      MS_SQL_VERSIONS: '["mssql2016"]'
+      MY_MATRIX: '["aa"]'
       JSON_SECRET: ${{ secrets.JSON_SECRET }}
-      # Test 1:  { "ID":"12334" }
-      # Test 2:
-      # { 
-      #   "ID":"12334"
-      # }
-
-
 
     steps:
 
@@ -30,12 +23,12 @@ jobs:
         id: create-vars
         shell: pwsh
         run: |
-          $msSqlVersionForMatrix = '{"mssqlversion":'+$env:MS_SQL_VERSIONS+'}';
-          Write-Host ("msSqlVersionForMatrix: {0}" -f "$msSqlVersionForMatrix"); 
-          Write-Host ("::set-output name=msSqlVersionForMatrix::{0}" -f "$msSqlVersionForMatrix"); 
+          $myFullMatrix = '{"myValue":'+$env:MY_MATRIX+'}';
+          Write-Host ("myFullMatrix: {0}" -f "$myFullMatrix"); 
+          Write-Host ("::set-output name=myFullMatrix::{0}" -f "$myFullMatrix"); 
           
     outputs:
-      msSqlVersionForMatrix: ${{ steps.create-vars.outputs.msSqlVersionForMatrix }}
+      myFullMatrix: ${{ steps.create-vars.outputs.myFullMatrix }}
 
   job-2:
     name: read vars
@@ -43,14 +36,14 @@ jobs:
     runs-on: windows-latest
 
     strategy:
-      matrix: ${{fromJson(needs.job-1.outputs.msSqlVersionForMatrix)}}
+      matrix: ${{fromJson(needs.job-1.outputs.myFullMatrix)}}
  
     steps:
       - name: print vars
         id: print-vars
         shell: pwsh
         run: |
-          Write-Host "${{ matrix.mssqlversion }}";
+          Write-Host "${{ matrix.myValue }}";
 
 
 
