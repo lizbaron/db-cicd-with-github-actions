@@ -25,7 +25,7 @@ jobs:
 
     env:
       MS_SQL_VERSIONS: '["mssql2016"]'
-      JSON_SECRET: ${{ secrets.JSON_SECRET }}
+#      JSON_SECRET: ${{ secrets.JSON_SECRET }}
 
     steps:
 
