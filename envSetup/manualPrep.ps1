@@ -32,10 +32,17 @@ while ("Succeeded" -ne (az group list --query "[?name=='$azResourceGroupName'].{
 $spCredential = az ad sp create-for-rbac -n "$azServicePrincipalName" --sdk-auth --role contributor --scopes "/subscriptions/$azSubscriptionId/resourceGroups/$azResourceGroupName" 
 
 $spCredential;
+Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   BASE64 SNIPPET  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
+Write-Output "💖";
+[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($spCredential));
+Write-Output "💖";
+Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
+Write-Output "";
+Write-Output "";
 Write-Output "";
 Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   INSTRUCTIONS  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
 Write-Output "💖";
-Write-Output "💖   Copy the json snippet above and save it as the GitHub Secret `"AZ_SP_CRED_$projectName`"."; 
+Write-Output "💖   Copy the base64 encoded snippet above and save it as the GitHub Secret `"AZ_SP_CRED_$projectName`"."; 
 Write-Output "💖";
 Write-Output "💖   GitHub secrets can be set by going to Settings > Secrets > `"New repository secret`".";
 Write-Output "💖";

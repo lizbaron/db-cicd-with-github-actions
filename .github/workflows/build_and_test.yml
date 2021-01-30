@@ -104,37 +104,6 @@ jobs:
           path: "${{ env.artifact_dir }}\\"
 
 #-##-###-#####-########-#############-#####################-#################################
-  job-1:
-    name: set vars
-    runs-on: windows-latest # Kubectl 1.20
-
-    steps:
-      - name: create vars
-        id: create-vars
-        shell: pwsh
-        run: |
-          $mssqlversion = @("2017","2019");
-          
-          $matrixData = @{};
-          $mssqlversion|%{$matrixData += @{$_=@{mssqlversion=$_;port=41417;quotes="'3'"}}}
-
-          $mssqlversionString = '{"mssqlversion":'+($mssqlversion|ConvertTo-Json -compress)+'}'
-          $matrixDataString = ($matrixData|ConvertTo-Json -compress).replace("'","''")
-
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Write-Host "";
-          Write-Host ("mssqlversionString: {0}" -f "$mssqlversionString"); 
-          Write-Host ("matrixDataString: {0}" -f "$matrixDataString"); 
-          Write-Host "";
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-
-
-          Write-Host ('::set-output name=mssqlversion::'+$mssqlversionString)
-          Write-Host ('::set-output name=matrixdata::'+$matrixDataString)
-          
-    outputs:
-      mssqlversion: ${{ steps.create-vars.outputs.mssqlversion }}
-      matrixdata: ${{ steps.create-vars.outputs.matrixdata }}
 
   set-up-k8s-env:
 #    needs: build-tSQLt
@@ -220,12 +189,20 @@ jobs:
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   "; 
  
-      #  # documentation: https://github.com/azure/login#configure-azure-credentials
-      # - name: login via az module
-      #   uses: azure/login@v1
-      #   with:
-      #     creds: ${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}
-      #     enable-AzPSSession: true 
+      - name: print variables
+        id: cred-decode
+        shell: pwsh
+        run: |
+          $decodedCreds = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}"))
+          Write-Host ('::set-output name=az_sp_creds::'+$decodedCreds);
+
+
+       # documentation: https://github.com/azure/login#configure-azure-credentials
+      - name: login via az module
+        uses: azure/login@v1
+        with:
+          creds: ${{ steps.cred-decode.outputs.az_sp_creds }}
+          enable-AzPSSession: true 
 
       # # documentation: https://github.com/Azure/get-keyvault-secrets
       # - name: get azure secrets
@@ -264,25 +241,6 @@ jobs:
       azsecretsmanagername: ${{ steps.create-vars.outputs.azSecretsManagerName }}
 
 #################################-#####################-#############-########-#####-###-##-#
-  job-2:
-    name: read vars
-    needs: job-1
-    runs-on: windows-latest # Kubectl 1.20
-
-    strategy:
-      matrix: ${{fromJson(needs.job-1.outputs.mssqlversion)}}
-
-    steps:
-      - name: print vars
-        id: print-vars
-        shell: pwsh
-        run: |
-          $matrixData = ('${{ needs.job-1.outputs.matrixdata }}'|ConvertFrom-Json)
-          $cc=$matrixData.${{ matrix.mssqlversion }}
-          $cc|FT
-          $cc.port
-
-
   test-tSQLt:
     name: test build artifacts
     needs: set-up-k8s-env
