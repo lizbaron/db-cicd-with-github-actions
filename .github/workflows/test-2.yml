@@ -14,7 +14,7 @@ jobs:
     runs-on: windows-latest
 
     env:
-      MY_MATRIX: '["this","Y3JlYXRl"]'
+      MY_MATRIX: '["this","create"]'
       JSON_SECRET: ${{ secrets.JSON_SECRET }}
 
     steps:
@@ -24,6 +24,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Host ($env:JSON_SECRET).toCharArray();
+          Write-Host ([System.Convert]::FromBase64String($env:JSON_SECRET)).toCharArray()
           $myFullMatrix = '{"myValue":'+$env:MY_MATRIX+'}';
           Write-Host ("myFullMatrix: {0}" -f "$myFullMatrix"); 
           Write-Host ("::set-output name=myFullMatrix::{0}" -f "$myFullMatrix"); 
