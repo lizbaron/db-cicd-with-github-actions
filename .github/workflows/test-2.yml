@@ -23,6 +23,7 @@ jobs:
         id: create-vars
         shell: pwsh
         run: |
+          Write-Host ($env:JSON_SECRET).toCharArray();
           $myFullMatrix = '{"myValue":'+$env:MY_MATRIX+'}';
           Write-Host ("myFullMatrix: {0}" -f "$myFullMatrix"); 
           Write-Host ("::set-output name=myFullMatrix::{0}" -f "$myFullMatrix"); 
