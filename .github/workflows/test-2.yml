@@ -36,6 +36,18 @@ jobs:
     needs: job-1
     runs-on: windows-latest
 
+    steps:
+      - name: print vars
+        id: print-vars
+        shell: pwsh
+        run: |
+          Write-Host "${{ needs.job-1.outputs.myFullMatrix }}";
+
+  job-3:
+    name: read vars in matrix
+    needs: job-1
+    runs-on: windows-latest
+
     strategy:
       matrix: ${{fromJson(needs.job-1.outputs.myFullMatrix)}}
  
