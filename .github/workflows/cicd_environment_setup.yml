@@ -42,7 +42,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-           
       - name: decode az sp cred
         id: cred-decode
         shell: pwsh
@@ -69,7 +68,7 @@ jobs:
           inlineScript: |
             $Parameters = @{
               projectName = "$env:PROJECT_NAME";
-              azServicePrincipalCredentials = "${{ steps.cred-decode.outputs.az_sp_creds }}";
+              azServicePrincipalCredentials = ${{ steps.cred-decode.outputs.az_sp_creds }};
               sshPassphrase = "$env:SSH_PASSPHRASE";
               linuxNodePoolDefaultVMSize = "$env:LINUX_NODEPOOL_DEFAULT_VM_SIZE"
               windowsNodePoolDefaultVMSize = "$env:WINDOWS_NODEPOOL_DEFAULT_VM_SIZE"
