@@ -42,6 +42,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+           
+      - name: decode az sp cred
+        id: cred-decode
+        shell: pwsh
+        run: |
+          $decodedCreds = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}"))
+          Write-Host ('::set-output name=az_sp_creds::'+$decodedCreds);
+
       # documentation: https://github.com/azure/login#configure-azure-credentials
       # TODO: set up a service principal which has permission only on the resource group and associated resources it creates
       # MDP: This task can be replaced with Connect-AzAccount via service principal (https://docs.microsoft.com/en-us/powershell/azure/authenticate-azureps?view=azps-5.3.0). However for most pipelines, which would use azure powershell more than once, this is an anti-pattern.
@@ -49,7 +57,7 @@ jobs:
       - name: login via az module
         uses: azure/login@v1
         with:
-          creds: ${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS }}
+          creds: ${{ steps.cred-decode.outputs.az_sp_creds }}
           enable-azpssession: true 
 
       # documentation: https://github.com/marketplace/actions/azure-powershell-action
@@ -61,7 +69,7 @@ jobs:
           inlineScript: |
             $Parameters = @{
               projectName = "$env:PROJECT_NAME";
-              azServicePrincipalCredentials = "$env:AZ_SERVICE_PRINCIPAL_CREDENTIALS";
+              azServicePrincipalCredentials = "${{ steps.cred-decode.outputs.az_sp_creds }}";
               sshPassphrase = "$env:SSH_PASSPHRASE";
               linuxNodePoolDefaultVMSize = "$env:LINUX_NODEPOOL_DEFAULT_VM_SIZE"
               windowsNodePoolDefaultVMSize = "$env:WINDOWS_NODEPOOL_DEFAULT_VM_SIZE"
