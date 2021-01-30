@@ -14,7 +14,7 @@ jobs:
     runs-on: windows-latest
 
     env:
-      MY_MATRIX: '["aa"]'
+      MY_MATRIX: '["this","creates"]'
       JSON_SECRET: ${{ secrets.JSON_SECRET }}
 
     steps:
