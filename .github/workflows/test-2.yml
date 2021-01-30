@@ -24,7 +24,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Host ($env:JSON_SECRET).toCharArray();
-          Write-Host ([System.Convert]::FromBase64String($env:JSON_SECRET)).toCharArray()
+          Write-Host ([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($env:JSON_SECRET))).toCharArray()
           $myFullMatrix = '{"myValue":'+$env:MY_MATRIX+'}';
           Write-Host ("myFullMatrix: {0}" -f "$myFullMatrix"); 
           Write-Host ("::set-output name=myFullMatrix::{0}" -f "$myFullMatrix"); 
