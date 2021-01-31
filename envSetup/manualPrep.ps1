@@ -29,9 +29,18 @@ while ("Succeeded" -ne (az group list --query "[?name=='$azResourceGroupName'].{
 }
 
 # Create the service principal. The contributor role is insufficient for attaching a newly created ACR to an AKS cluster.
-$spCredential = az ad sp create-for-rbac -n "$azServicePrincipalName" --sdk-auth --role contributor --scopes "/subscriptions/$azSubscriptionId/resourceGroups/$azResourceGroupName" 
+# We must check that the clientSecret does not contain single or double quotes.
+# If it does, the either the json snippet returned will be invalid (in the case of the double quote)
+# or it will break AKS later down the line (in the case of the single quote).
+Do {
+    Write-Output "Generating Credentials";
+    $spCredential = az ad sp create-for-rbac -n "$azServicePrincipalName" --sdk-auth --role contributor --scopes "/subscriptions/$azSubscriptionId/resourceGroups/$azResourceGroupName";
+} While (
+    ($spCredential.Split("`r`n").Split("`r").Split("`n") | Where-Object { $_ -match "^\s*`"clientSecret`"\s*:\s*`"[^`"]*[`"'][^`"]*`"\s*,?\s*$" }).count -gt 0
+);
 
 $spCredential;
+
 Write-Output "💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   BASE64 SNIPPET  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖";
 Write-Output "💖";
 [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($spCredential));
