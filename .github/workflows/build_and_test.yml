@@ -24,7 +24,7 @@ on:
 jobs:
   build-tSQLt:
     name: build tSQLt
-    if: ${{ false }}
+    # if: ${{ false }}
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
     # Note: [https://kubernetes.io/docs/tasks/tools/install-kubectl/#before-you-begin]
@@ -106,7 +106,7 @@ jobs:
 #-##-###-#####-########-#############-#####################-#################################
 
   set-up-k8s-env:
-#    needs: build-tSQLt
+    needs: build-tSQLt
     name: set up k8s namespace
 
     runs-on: windows-latest # Kubectl 1.20
