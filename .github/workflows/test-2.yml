@@ -1,0 +1,63 @@
+name: Test Stuff 2
+
+# Controls when the action will run. 
+on:
+ push:
+   branches:
+     - breaking-things
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+
+  job-1:
+    name: set vars
+    runs-on: windows-latest
+
+    env:
+      MY_MATRIX: '["this","create"]'
+      JSON_SECRET: ${{ secrets.JSON_SECRET }}
+
+    steps:
+
+      - name: create vars
+        id: create-vars
+        shell: pwsh
+        run: |
+          Write-Host ($env:JSON_SECRET).toCharArray();
+          Write-Host ([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($env:JSON_SECRET))).toCharArray()
+          $myFullMatrix = '{"myValue":'+$env:MY_MATRIX+'}';
+          Write-Host ("myFullMatrix: {0}" -f "$myFullMatrix"); 
+          Write-Host ("::set-output name=myFullMatrix::{0}" -f "$myFullMatrix"); 
+          
+    outputs:
+      myFullMatrix: ${{ steps.create-vars.outputs.myFullMatrix }}
+
+  job-2:
+    name: read vars
+    needs: job-1
+    runs-on: windows-latest
+
+    steps:
+      - name: print vars
+        id: print-vars
+        shell: pwsh
+        run: |
+          Write-Host "${{ needs.job-1.outputs.myFullMatrix }}";
+
+  job-3:
+    name: read vars in matrix
+    needs: job-1
+    runs-on: windows-latest
+
+    strategy:
+      matrix: ${{fromJson(needs.job-1.outputs.myFullMatrix)}}
+ 
+    steps:
+      - name: print vars
+        id: print-vars
+        shell: pwsh
+        run: |
+          Write-Host "${{ matrix.myValue }}";
+
+
+
