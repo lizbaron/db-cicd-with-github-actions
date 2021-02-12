@@ -97,7 +97,7 @@ jobs:
           inlineScript: |
             $Parameters = @{
               projectName = "$env:PROJECT_NAME";
-              azSecretManagerName = "${{ steps.create-vars.outputs.azsecretsmanagername }}";
+              azSecretsManagerName = "${{ steps.create-vars.outputs.azsecretsmanagername }}";
               azResourceGroupName = "${{ steps.azure-secrets.outputs.azResourceGroupName }}";
               debugOn = $false;
             }; 
