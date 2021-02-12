@@ -47,8 +47,8 @@ $buildMachinePassword = ConvertTo-SecureString -String "$allParts" -AsPlainText 
 
 $part1 = (Get-RandomCharacters -length 10 -characters 'abcdefghiklmnoprstuvwxyz');
 $part2 = (Get-RandomCharacters -length 5 -characters '1234567890');
-$buildMachineUserName = "User_" + (-join ((-join ($part1,$part2)).ToCharArray() | Get-Random -Shuffle));
-
+$allParts = "User_" + (-join ((-join ($part1,$part2)).ToCharArray() | Get-Random -Shuffle));
+$buildMachineUserName = ConvertTo-SecureString -String "$allParts" -AsPlainText -Force;
 
 $LocationName = (Get-AzResourceGroup -Name $azResourceGroupName).location;
 $ComputerName = $azVMName;
@@ -73,9 +73,9 @@ $VirtualMachine = Set-AzVMSourceImage -VM $VirtualMachine -PublisherName 'Micros
 $azVM = New-AzVM -ResourceGroupName $azResourceGroupName -Location $LocationName -VM $VirtualMachine -Verbose;
 
 $azVM;
-Get-ChildItem -Path . ;
+Get-ChildItem -Path . 
 Invoke-AzVMRunCommand -ResourceGroupName $azResourceGroupName -VMName $azVMName -CommandId 'RunPowerShellScript' -ScriptPath 'setupBuildMachine.ps1' -Parameter @{repoURL = $repoURL; debugOn = $debugOn}
 
-Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'buildMachineFQDN' -SecretValue $buildMachineFQDN;
+# Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'buildMachineFQDN' -SecretValue $buildMachineFQDN;
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'buildMachineUser' -SecretValue $buildMachineUserName;
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'buildMachinePassword' -SecretValue $buildMachinePassword;
