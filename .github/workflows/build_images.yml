@@ -169,6 +169,8 @@ jobs:
     if: ${{ false }}
 
     runs-on: windows-latest
+
+    steps:
       # documentation: https://github.com/azure/login#configure-azure-credentials
       - name: login via az module
         uses: azure/login@v1
