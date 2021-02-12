@@ -1,9 +1,8 @@
-#TODO: Install Git and Docker on the Win2019 Core machine
-#TODO: Clone Repository
 Param(
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$projectName,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$azSecretsManagerName,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$azResourceGroupName,
+    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$repoURL,
     [ValidateNotNullOrEmpty()][string]$azVMSize = "Standard_D2s_v3",
     [ValidateNotNullOrEmpty()][string]$azVMName = "Win2019Core",
     [switch]$debugOn=$false
@@ -74,7 +73,8 @@ $VirtualMachine = Set-AzVMSourceImage -VM $VirtualMachine -PublisherName 'Micros
 $azVM = New-AzVM -ResourceGroupName $azResourceGroupName -Location $LocationName -VM $VirtualMachine -Verbose;
 
 $azVM;
-
+Get-ChildItem -Path . ;
+Invoke-AzVMRunCommand -ResourceGroupName $azResourceGroupName -VMName $azVMName -CommandId 'RunPowerShellScript' -ScriptPath 'setupBuildMachine.ps1' -Parameter @{repoURL = $repoURL; debugOn = $debugOn}
 
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'buildMachineFQDN' -SecretValue $buildMachineFQDN;
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'buildMachineUser' -SecretValue $buildMachineUserName;
