@@ -98,6 +98,7 @@ jobs:
             $Parameters = @{
               projectName = "$env:PROJECT_NAME";
               azSecretManagerName = "${{ steps.create-vars.outputs.azsecretsmanagername }}";
+              azResourceGroupName = "${{ steps.azure-secrets.outputs.azResourceGroupName }}";
               debugOn = $false;
             }; 
             ./envSetup/createContainerBuildMachine.ps1 @Parameters; 
@@ -113,6 +114,7 @@ jobs:
   create-images:
     name: create and publish the ACR images
     needs: create-vm
+    if: ${{ false }}
 
     runs-on: windows-latest
 
@@ -164,6 +166,7 @@ jobs:
   drop-vm:
     name: drop the VM
     needs: create-images   #TODO: GitHub Actions Cleanup Job???
+    if: ${{ false }}
 
     runs-on: windows-latest
       # documentation: https://github.com/azure/login#configure-azure-credentials
