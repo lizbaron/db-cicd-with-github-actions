@@ -101,7 +101,7 @@ jobs:
               azResourceGroupName = "${{ steps.azure-secrets.outputs.azResourceGroupName }}";
               debugOn = $false;
             }; 
-            ./envSetup/createContainerBuildMachine.ps1 @Parameters; 
+            ./cicd/envSetup/createContainerBuildMachine.ps1 @Parameters; 
 
     outputs:
       mssqlversion: ${{ steps.create-vars.outputs.msSqlVersionForMatrix }}
