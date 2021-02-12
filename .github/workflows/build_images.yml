@@ -1,0 +1,186 @@
+# This workflow creates the ACR images for the different suported SQL Server versions.
+
+name: Create And Publish Container Images To ACR
+
+on:
+  workflow_dispatch: 
+    inputs:
+      projectName:
+        description: 'Project Name'     
+        required: true
+        default: 'db_cicd_project'
+      msSqlVersions:
+        description: 'names of the k8s deployment files in JSON array format (e.g. ["mssql2008r2","mssql2012","mssql2014","mssql2016","mssql2017","mssql2019"])'
+        required: true
+        default: '["mssql2016"]'
+
+
+jobs:
+  create-vm:
+    name: Create The VM
+    runs-on: windows-latest 
+
+    env:
+      PROJECT_NAME: ${{ github.event.inputs.projectName }}
+      MS_SQL_VERSIONS: ${{ github.event.inputs.msSqlVersions }}
+      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
+      
+    steps:
+      - name: Checkout self
+        uses: actions/checkout@v2
+        with:
+          path: cicd
+
+      - name: create variables
+        id: create-vars
+        shell: pwsh
+        run: |
+          function Get-MD5HashOfString($string) {
+              $stringAsStream = [System.IO.MemoryStream]::new();
+              $writer = [System.IO.StreamWriter]::new($stringAsStream);
+              $writer.write($string);
+              $writer.Flush();
+              $stringAsStream.Position = 0;
+              $hashedString = (Get-FileHash -InputStream $stringAsStream).Hash;
+              return [String]$hashedString;
+          }
+
+          $projectNameHash = (Get-MD5HashOfString($env:PROJECT_NAME)).Substring(0,10);
+          $azSecretsManagerName = "sm-" + $projectNameHash;
+          $containerRegistryName = "crn-" + $projectNameHash;
+
+          $msSqlVersionForMatrix = '{"mssqlversion":'+$env:MS_SQL_VERSIONS+'}';
+
+
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          Write-Host ("projectName value: {0}" -f $env:PROJECT_NAME);
+          Write-Host ("msSqlVersionForMatrix: {0}" -f "$msSqlVersionForMatrix"); 
+          Write-Host ("azSecretsManagerName: {0}" -f "$azSecretsManagerName"); 
+          Write-Host ("containerRegistryName: {0}" -f "$containerRegistryName"); 
+          Write-Host "";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          
+          Write-Host ('::set-output name=azsecretsmanagername::'+$azSecretsManagerName);
+          Write-Host ('::set-output name=containerregistryname::'+$containerRegistryName);
+          Write-Host ("::set-output name=msSqlVersionForMatrix::{0}" -f "$msSqlVersionForMatrix"); 
+           
+      - name: decode az sp cred
+        id: cred-decode
+        shell: pwsh
+        run: |
+          $decodedCreds = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}"))
+          Write-Host ('::set-output name=az_sp_creds::'+$decodedCreds);
+
+       # documentation: https://github.com/azure/login#configure-azure-credentials
+      - name: login via az module
+        uses: azure/login@v1
+        with:
+          creds: ${{ steps.cred-decode.outputs.az_sp_creds }}
+          enable-AzPSSession: true 
+
+      # documentation: https://github.com/Azure/get-keyvault-secrets
+      - name: get azure secrets
+        id: azure-secrets
+        uses: Azure/get-keyvault-secrets@v1.0
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
+        with:
+          keyvault: ${{ steps.create-vars.outputs.azsecretsmanagername }}
+          secrets: 'azResourceGroupName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
+
+      - name: run azure powershell script
+        uses: azure/powershell@v1
+        with:
+          azpsversion: 'latest'
+          errorActionPreference: 'continue'
+          inlineScript: |
+            $Parameters = @{
+              projectName = "$env:PROJECT_NAME";
+              azSecretManagerName = "${{ steps.create-vars.outputs.azsecretsmanagername }}";
+              debugOn = $false;
+            }; 
+            ./envSetup/createContainerBuildMachine.ps1 @Parameters; 
+
+    outputs:
+      mssqlversion: ${{ steps.create-vars.outputs.msSqlVersionForMatrix }}
+      containerregistryname: ${{ steps.create-vars.outputs.containerRegistryName }}
+      azsecretsmanagername: ${{ steps.create-vars.outputs.azSecretsManagerName }}
+
+
+
+#################################-#####################-#############-########-#####-###-##-#
+  create-images:
+    name: create and publish the ACR images
+    needs: create-vm
+
+    runs-on: windows-latest
+
+    env:
+      AZ_CONTAINER_REGISTRY_NAME: ${{ needs.create-vm.outputs.containerregistryname }}
+      AZ_SECRETS_MANAGER_NAME: ${{ needs.create-vm.outputs.azsecretsmanagername }}
+      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
+
+    strategy:
+      matrix: ${{fromJson(needs.create-vm.outputs.mssqlversion)}}
+
+    steps:
+
+      - name: Checkout self
+        uses: actions/checkout@v2
+        with:
+          path: cicd
+
+      - name: build and push docker image
+        shell: pwsh
+        run: |
+          $sqlPortArray = ('${{ needs.set-up-k8s-env.outputs.ports }}'|ConvertFrom-Json)  ;
+          $mssqlversion = '${{ matrix.mssqlversion }}';
+          $sqlPort = $sqlPortArray.${{ matrix.mssqlversion }}
+
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          Write-Host ("sqlPort value: {0}" -f $sqlPort); 
+          Write-Host ("azSecretsManagerName: {0}" -f "$env:AZ_SECRETS_MANAGER_NAME"); 
+          Write-Host ("namespace: {0}" -f "$env:NAMESPACE"); 
+          Write-Host "";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+
+          $sqlcmdPath = (Get-Command sqlcmd).Path.TrimEnd("\\SQLCMD.EXE");
+          echo "sqlPort=$sqlPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "sqlcmdPath=$sqlcmdPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: decode az sp cred
+        id: cred-decode
+        shell: pwsh
+        run: |
+          $decodedCreds = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}"))
+          Write-Host ('::set-output name=az_sp_creds::'+$decodedCreds);
+
+
+
+
+#################################-#####################-#############-########-#####-###-##-#
+  drop-vm:
+    name: drop the VM
+    needs: create-images   #TODO: GitHub Actions Cleanup Job???
+
+    runs-on: windows-latest
+      # documentation: https://github.com/azure/login#configure-azure-credentials
+      - name: login via az module
+        uses: azure/login@v1
+        with:
+          creds: ${{ steps.cred-decode.outputs.az_sp_creds }}
+          enable-AzPSSession: true 
+
+      # documentation: https://github.com/Azure/get-keyvault-secrets
+      - name: get azure secrets
+      # TODO: Consider deleting this task and getting these manually and setting them as secrets.
+        uses: Azure/get-keyvault-secrets@v1.0
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
+        with:
+          keyvault: ${{ env.AZ_SECRETS_MANAGER_NAME }}
+          secrets: 'azResourceGroupName, aksClusterName, containerRegistryName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
+        id: azure-secrets
+
