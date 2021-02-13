@@ -78,7 +78,8 @@ $azVM = New-AzVM -ResourceGroupName $azResourceGroupName -Location $LocationName
 
 $azVM;
 Get-ChildItem -Path . 
-Invoke-AzVMRunCommand -ResourceGroupName $azResourceGroupName -VMName $azVMName -CommandId 'RunPowerShellScript' -ScriptPath 'setupBuildMachine.ps1' -Parameter @{repoURL = $repoURL; debugOn = $debugOn}
+Invoke-AzVMRunCommand -ResourceGroupName $azResourceGroupName -VMName $azVMName -CommandId 'RunPowerShellScript' -ScriptPath 'cicd\envSetup\setupBuildMachine.ps1' -Parameter @{repoURL = $repoURL; debugOn = $debugOn}
+
 
 # Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'buildMachineFQDN' -SecretValue $buildMachineFQDN;
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'buildMachineUser' -SecretValue $secretBuildMachineUserName;
