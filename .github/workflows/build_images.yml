@@ -102,7 +102,7 @@ jobs:
               azSecretsManagerName = "${{ steps.create-vars.outputs.azsecretsmanagername }}";
               azResourceGroupName = "${{ steps.azure-secrets.outputs.azResourceGroupName }}";
               repoURL = "${{ steps.create-vars.outputs.repoURL }}";
-              debugOn = $false;
+              debugOn = $true;
             }; 
             ./cicd/envSetup/createContainerBuildMachine.ps1 @Parameters; 
 
