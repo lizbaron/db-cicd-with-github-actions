@@ -84,7 +84,8 @@ Write-Debug ("Get-ChildItem");
 Write-Debug (Get-ChildItem -Path . | Format-Table | Out-String);
 Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
-Invoke-AzVMRunCommand -ResourceGroupName $azResourceGroupName -VMName $azVMName -CommandId 'RunPowerShellScript' -ScriptPath 'cicd\envSetup\setupBuildMachine.ps1' -Parameter @{repoURL = $repoURL; debugOn = $debugOn}
+$setupBuildMachinePath = (Split-Path $MyInvocation.MyCommand.Path -Parent) + '\setupBuildMachine.ps1';
+Invoke-AzVMRunCommand -ResourceGroupName $azResourceGroupName -VMName $azVMName -CommandId 'RunPowerShellScript' -ScriptPath $setupBuildMachinePath -Parameter @{repoURL = $repoURL; debugOn = $debugOn}
 
 
 # Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'buildMachineFQDN' -SecretValue $buildMachineFQDN;
