@@ -1,8 +1,9 @@
 Param(
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$repoURL,
-    [switch]$debugOn=$false
+    $debugOnString="false"
 );
 
+$debugOn = ($debugOnString -eq "true");
 if ($debugOn) {
     $DebugPreference = "Continue";
 }
