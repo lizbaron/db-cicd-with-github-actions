@@ -4,7 +4,7 @@ Param(
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$azResourceGroupName,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$repoURL,
     [ValidateNotNullOrEmpty()][string]$azVMSize = "Standard_D2s_v3",
-    [ValidateNotNullOrEmpty()][string]$azVMName = "Win2019Core",
+    [ValidateNotNullOrEmpty()][string]$azVMName = "Win2019Core_2",
     [switch]$debugOn=$false
 );
 
@@ -57,9 +57,9 @@ Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 $LocationName = (Get-AzResourceGroup -Name $azResourceGroupName).location;
 $ComputerName = $azVMName;
 
-$NetworkName = "MyNet";
-$NICName = "MyNIC";
-$SubnetName = "MySubnet";
+$NetworkName = "net_$azVMName" ;
+$NICName = "nic_$azVMName";
+$SubnetName = "sub_$azVMName";
 $SubnetAddressPrefix = "10.0.0.0/24";
 $VnetAddressPrefix = "10.0.0.0/16";
 
