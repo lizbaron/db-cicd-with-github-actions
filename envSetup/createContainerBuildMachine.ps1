@@ -84,7 +84,7 @@ Write-Debug ("Get-ChildItem");
 Write-Debug (Get-ChildItem -Recurse -Path . | Format-Table | Out-String);
 Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
-$setupBuildMachinePath = (Split-Path $MyInvocation.MyCommand.Path -Parent) + '\setupBuildMachine.ps1';
+$setupBuildMachinePath = (Split-Path $MyInvocation.MyCommand.Path -Parent) + '\testBuildMachine.ps1';
 Invoke-AzVMRunCommand -ResourceGroupName $azResourceGroupName -VMName $azVMName -CommandId 'RunPowerShellScript' -ScriptPath $setupBuildMachinePath -Parameter @{repoURL = "$repoURL"; debugOnString = "$debugOn"}
 
 
