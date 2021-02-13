@@ -76,8 +76,14 @@ $VirtualMachine = Set-AzVMSourceImage -VM $VirtualMachine -PublisherName 'Micros
 
 $azVM = New-AzVM -ResourceGroupName $azResourceGroupName -Location $LocationName -VM $VirtualMachine -Verbose;
 
-$azVM;
-Get-ChildItem -Path . 
+Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+Write-Debug ("azVM"); 
+Write-Debug ($azVM | Format-Table | Out-String);
+Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+Write-Debug ("Get-ChildItem"); 
+Write-Debug (Get-ChildItem -Path . | Format-Table | Out-String);
+Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+
 Invoke-AzVMRunCommand -ResourceGroupName $azResourceGroupName -VMName $azVMName -CommandId 'RunPowerShellScript' -ScriptPath 'cicd\envSetup\setupBuildMachine.ps1' -Parameter @{repoURL = $repoURL; debugOn = $debugOn}
 
 
