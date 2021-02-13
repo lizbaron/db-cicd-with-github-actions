@@ -4,7 +4,7 @@ Param(
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$azResourceGroupName,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$repoURL,
     [ValidateNotNullOrEmpty()][string]$azVMSize = "Standard_D2s_v3",
-    [ValidateNotNullOrEmpty()][string]$azVMName = "w2019c2",
+    [ValidateNotNullOrEmpty()][string]$azVMName = "w2019c3",
     [switch]$debugOn=$false
 );
 
@@ -74,7 +74,7 @@ $VirtualMachine = Set-AzVMOperatingSystem -VM $VirtualMachine -Windows -Computer
 $VirtualMachine = Add-AzVMNetworkInterface -VM $VirtualMachine -Id $NIC.Id;
 $VirtualMachine = Set-AzVMSourceImage -VM $VirtualMachine -PublisherName 'MicrosoftWindowsServer' -Offer 'WindowsServer' -Skus '2019-Datacenter-Core-with-Containers' -Version latest;
 
-$azVM = New-AzVM -ResourceGroupName $azResourceGroupName -Location $LocationName -VM $VirtualMachine -Verbose;
+$azVM = New-AzVM -ResourceGroupName $azResourceGroupName -Location $LocationName -VM $VirtualMachine -Verbose -DomainNameLabel $azVMName;
 
 Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 Write-Debug ("azVM"); 
