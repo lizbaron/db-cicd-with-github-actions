@@ -4,7 +4,7 @@ Param(
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$azResourceGroupName,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$repoURL,
     [ValidateNotNullOrEmpty()][string]$azVMSize = "Standard_D2s_v3",
-    [ValidateNotNullOrEmpty()][string]$azVMName = "w2019c2",
+    [ValidateNotNullOrEmpty()][string]$azVMName = "w2019c1",
     [switch]$debugOn=$false
 );
 
@@ -57,15 +57,15 @@ Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 $LocationName = (Get-AzResourceGroup -Name $azResourceGroupName).location;
 $ComputerName = $azVMName;
 
-$NSGName = "nsg_$azVMName" ;
+$networkSecurityGroupName = "nsg_$azVMName" ;
 $NetworkName = "net_$azVMName" ;
 $NICName = "nic_$azVMName";
 $SubnetName = "sub_$azVMName";
 $SubnetAddressPrefix = "10.0.0.0/24";
 $VnetAddressPrefix = "10.0.0.0/16";
 
-$networkSecurityGroup = New-AzNetworkSecurityGroup -Name $NSGName -ResourceGroupName $azResourceGroupName -Location $LocationName
-$SingleSubnet = New-AzVirtualNetworkSubnetConfig -Name $SubnetName -AddressPrefix $SubnetAddressPrefix;
+$networkSecurityGroup = New-AzNetworkSecurityGroup -Name $networkSecurityGroupName -ResourceGroupName $azResourceGroupName -Location $LocationName
+$SingleSubnet = New-AzVirtualNetworkSubnetConfig -Name $SubnetName -AddressPrefix $SubnetAddressPrefix -NetworkSecurityGroup $networkSecurityGroup;
 $Vnet = New-AzVirtualNetwork -Name $NetworkName -ResourceGroupName $azResourceGroupName -Location $LocationName -AddressPrefix $VnetAddressPrefix -Subnet $SingleSubnet;
 $NIC = New-AzNetworkInterface -Name $NICName -ResourceGroupName $azResourceGroupName -Location $LocationName -SubnetId $Vnet.Subnets[0].Id;
 
