@@ -1,5 +1,6 @@
 Param(
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$repoURL,
+    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$commitId,
     $debugOnString="false"
 );
 
@@ -13,8 +14,10 @@ Set-ExecutionPolicy Bypass -Scope Process -Force;
 iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) ;
 choco feature disable --name showDownloadProgress ;
 
-choco install git;
+choco install git --force --force-dependencies -y;
 
-git clone $repoURL sourceRepo ;
+& 'C:\Program Files\Git\cmd\git.exe' clone $repoURL sourceRepo ;
+cd sourceRepo ;
+& 'C:\Program Files\Git\cmd\git.exe' checkout $commitId ; 
 
 Get-ChildItem -Recurse -Path ./sourceRepo ;

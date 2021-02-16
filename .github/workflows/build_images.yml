@@ -54,6 +54,7 @@ jobs:
           $azSecretsManagerName = "sm-" + $projectNameHash;
           $containerRegistryName = "crn-" + $projectNameHash;
           $repoURL = "${{ github.SERVER_URL }}/${{ github.REPOSITORY }}.git";
+          $commitId = "${{ github.SHA }}" ;
           $msSqlVersionForMatrix = '{"mssqlversion":'+$env:MS_SQL_VERSIONS+'}';
 
 
@@ -64,12 +65,14 @@ jobs:
           Write-Host ("azSecretsManagerName: {0}" -f "$azSecretsManagerName"); 
           Write-Host ("containerRegistryName: {0}" -f "$containerRegistryName"); 
           Write-Host ("repoURL: {0}" -f "$repoURL"); 
+          Write-Host ("commitId: {0}" -f "$commitId"); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           
           Write-Host ('::set-output name=azsecretsmanagername::'+$azSecretsManagerName);
           Write-Host ('::set-output name=containerregistryname::'+$containerRegistryName);
           Write-Host ('::set-output name=repoURL::'+$repoURL);
+          Write-Host ('::set-output name=commitId::'+$commitId);
           Write-Host ("::set-output name=msSqlVersionForMatrix::{0}" -f "$msSqlVersionForMatrix"); 
            
       - name: decode az sp cred
@@ -107,6 +110,7 @@ jobs:
               azSecretsManagerName = "${{ steps.create-vars.outputs.azsecretsmanagername }}";
               azResourceGroupName = "${{ steps.azure-secrets.outputs.azResourceGroupName }}";
               repoURL = "${{ steps.create-vars.outputs.repoURL }}";
+              commitId = "${{ steps.create-vars.outputs.commitId }}";
               azVMName = "$env:MACHINE_NAME";
               debugOn = $true;
             }; 
