@@ -4,7 +4,7 @@ Param(
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$azResourceGroupName,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$repoURL,
     [ValidateNotNullOrEmpty()][string]$azVMSize = "Standard_D2s_v3",
-    [ValidateNotNullOrEmpty()][string]$azVMName = "w2019c1",
+    [ValidateNotNullOrEmpty()][string]$azVMName = "w2019c_liz",
     [switch]$debugOn=$false
 );
 
@@ -87,7 +87,7 @@ Write-Debug (Get-ChildItem -Recurse -Path . | Format-Table | Out-String);
 Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
 $setupBuildMachinePath = (Split-Path $MyInvocation.MyCommand.Path -Parent) + '\setupBuildMachine.ps1';
-Invoke-AzVMRunCommand -ResourceGroupName $azResourceGroupName -VMName $azVMName -CommandId 'RunPowerShellScript' -ScriptPath $setupBuildMachinePath -Parameter @{repoURL = "$repoURL"; debugOnString = "$debugOn"}
+# Invoke-AzVMRunCommand -ResourceGroupName $azResourceGroupName -VMName $azVMName -CommandId 'RunPowerShellScript' -ScriptPath $setupBuildMachinePath -Parameter @{repoURL = "$repoURL"; debugOnString = "$debugOn"}
 
 
 # Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'buildMachineFQDN' -SecretValue $buildMachineFQDN;
