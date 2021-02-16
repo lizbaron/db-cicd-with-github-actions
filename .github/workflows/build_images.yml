@@ -9,6 +9,10 @@ on:
         description: 'Project Name'     
         required: true
         default: 'db_cicd_project'
+      machineName:
+        description: 'Machine Name,  cannot be more than 15 characters long, be entirely numeric, or contain the following characters: ` ~ ! @ # $ % ^ & * ( ) = + _ [ ] { } \ | ; : . singlequote " , < > / ?.'     
+        required: true
+        default: 'w2019c1'
       msSqlVersions:
         description: 'names of the k8s deployment files in JSON array format (e.g. ["mssql2008r2","mssql2012","mssql2014","mssql2016","mssql2017","mssql2019"])'
         required: true
@@ -22,6 +26,7 @@ jobs:
 
     env:
       PROJECT_NAME: ${{ github.event.inputs.projectName }}
+      MACHINE_NAME: ${{ github.event.inputs.machineName }}
       MS_SQL_VERSIONS: ${{ github.event.inputs.msSqlVersions }}
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
       
@@ -102,6 +107,7 @@ jobs:
               azSecretsManagerName = "${{ steps.create-vars.outputs.azsecretsmanagername }}";
               azResourceGroupName = "${{ steps.azure-secrets.outputs.azResourceGroupName }}";
               repoURL = "${{ steps.create-vars.outputs.repoURL }}";
+              azVMName = "$env:MACHINE_NAME";
               debugOn = $true;
             }; 
             ./cicd/envSetup/createContainerBuildMachine.ps1 @Parameters; 

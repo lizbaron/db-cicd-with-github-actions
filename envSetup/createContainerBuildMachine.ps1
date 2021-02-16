@@ -3,8 +3,8 @@ Param(
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$azSecretsManagerName,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$azResourceGroupName,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$repoURL,
+    [ValidateNotNullOrEmpty()][ValidateNotNullOrEmpty()][string]$azVMName,
     [ValidateNotNullOrEmpty()][string]$azVMSize = "Standard_D2s_v3",
-    [ValidateNotNullOrEmpty()][string]$azVMName = "w2019c_liz",
     [switch]$debugOn=$false
 );
 
