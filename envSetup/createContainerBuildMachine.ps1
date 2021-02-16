@@ -4,7 +4,7 @@ Param(
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$azResourceGroupName,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$repoURL,
     [ValidateNotNullOrEmpty()][string]$azVMSize = "Standard_D2s_v3",
-    [ValidateNotNullOrEmpty()][string]$azVMName = "w2019c5",
+    [ValidateNotNullOrEmpty()][string]$azVMName = "w2019c1",
     [switch]$debugOn=$false
 );
 
