@@ -2,9 +2,10 @@ Param(
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$projectName,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$azSecretsManagerName,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$azResourceGroupName,
+    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$machineRGName,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$repoURL,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$commitId,
-    [ValidateNotNullOrEmpty()][ValidateNotNullOrEmpty()][string]$azVMName,
+    [ValidateNotNullOrEmpty()][ValidateNotNullOrEmpty()][string]$machineName,
     [ValidateNotNullOrEmpty()][string]$azVMSize = "Standard_D2s_v3",
     [switch]$debugOn=$false
 );
@@ -32,7 +33,8 @@ if ($debugOn) {
 
 Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 Write-Debug ("Project Name: {0}" -f "$projectName"); 
-Write-Debug ("Resource Group Name: {0}" -f "$azResourceGroupName"); 
+Write-Debug ("Az Resource Group Name: {0}" -f "$azResourceGroupName"); 
+Write-Debug ("Machine Resource Group Name: {0}" -f "$machineRGName"); 
 Write-Debug ("Secrets Manager Name: {0}" -f "$azSecretsManagerName"); 
 Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
@@ -56,28 +58,34 @@ Write-Debug ("buildMachineUserName: {0}" -f "$buildMachineUserName");
 Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
 $LocationName = (Get-AzResourceGroup -Name $azResourceGroupName).location;
-$ComputerName = $azVMName;
+$ComputerName = $machineName;
 
-$networkSecurityGroupName = "nsg_$azVMName" ;
-$NetworkName = "net_$azVMName" ;
-$NICName = "nic_$azVMName";
-$SubnetName = "sub_$azVMName";
+$networkSecurityGroupName = "nsg_$machineName" ;
+$NetworkName = "net_$machineName" ;
+$NICName = "nic_$machineName";
+$SubnetName = "sub_$machineName";
 $SubnetAddressPrefix = "10.0.0.0/24";
 $VnetAddressPrefix = "10.0.0.0/16";
 
-$networkSecurityGroup = New-AzNetworkSecurityGroup -Name $networkSecurityGroupName -ResourceGroupName $azResourceGroupName -Location $LocationName
+$machineRGCreationLog = (New-AzResourceGroup -Name $machineRGName -Location $LocationName -Tag @{Department="tSQLtCI"; Ephemeral="True"} -Force | Out-String); 
+
+Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+Write-Debug ("machineRGCreationLog: {0}" -f "$machineRGCreationLog"); 
+Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+
+$networkSecurityGroup = New-AzNetworkSecurityGroup -Name $networkSecurityGroupName -ResourceGroupName $machineRGName -Location $LocationName
 $SingleSubnet = New-AzVirtualNetworkSubnetConfig -Name $SubnetName -AddressPrefix $SubnetAddressPrefix -NetworkSecurityGroup $networkSecurityGroup;
-$Vnet = New-AzVirtualNetwork -Name $NetworkName -ResourceGroupName $azResourceGroupName -Location $LocationName -AddressPrefix $VnetAddressPrefix -Subnet $SingleSubnet;
-$NIC = New-AzNetworkInterface -Name $NICName -ResourceGroupName $azResourceGroupName -Location $LocationName -SubnetId $Vnet.Subnets[0].Id;
+$Vnet = New-AzVirtualNetwork -Name $NetworkName -ResourceGroupName $machineRGName -Location $LocationName -AddressPrefix $VnetAddressPrefix -Subnet $SingleSubnet;
+$NIC = New-AzNetworkInterface -Name $NICName -ResourceGroupName $machineRGName -Location $LocationName -SubnetId $Vnet.Subnets[0].Id;
 
 $Credential = New-Object System.Management.Automation.PSCredential ($buildMachineUserName, $buildMachinePassword);
 
-$VirtualMachine = New-AzVMConfig -VMName $azVMName -VMSize $azVMSize;
+$VirtualMachine = New-AzVMConfig -VMName $machineName -VMSize $azVMSize;
 $VirtualMachine = Set-AzVMOperatingSystem -VM $VirtualMachine -Windows -ComputerName $ComputerName -Credential $Credential -ProvisionVMAgent -EnableAutoUpdate;
 $VirtualMachine = Add-AzVMNetworkInterface -VM $VirtualMachine -Id $NIC.Id;
 $VirtualMachine = Set-AzVMSourceImage -VM $VirtualMachine -PublisherName 'MicrosoftWindowsServer' -Offer 'WindowsServer' -Skus '2019-Datacenter-Core-with-Containers' -Version latest;
 
-$azVM = New-AzVM -ResourceGroupName $azResourceGroupName -Location $LocationName -VM $VirtualMachine -Verbose ;
+$azVM = New-AzVM -ResourceGroupName $machineRGName -Location $LocationName -VM $VirtualMachine -Verbose ;
 
 Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 Write-Debug ("azVM"); 
@@ -88,9 +96,7 @@ Write-Debug (Get-ChildItem -Recurse -Path . | Format-Table | Out-String);
 Write-Debug "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
 $setupBuildMachinePath = (Split-Path $MyInvocation.MyCommand.Path -Parent) + '\setupBuildMachine.ps1';
-Invoke-AzVMRunCommand -ResourceGroupName $azResourceGroupName -VMName $azVMName -CommandId 'RunPowerShellScript' -ScriptPath $setupBuildMachinePath -Parameter @{repoURL = "$repoURL"; commitId = "$commitId"; debugOnString = "$debugOn"}
+Invoke-AzVMRunCommand -ResourceGroupName $machineRGName -VMName $machineName -CommandId 'RunPowerShellScript' -ScriptPath $setupBuildMachinePath -Parameter @{repoURL = "$repoURL"; commitId = "$commitId"; debugOnString = "$debugOn"}
 
-
-# Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'buildMachineFQDN' -SecretValue $buildMachineFQDN;
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'buildMachineUser' -SecretValue $secretBuildMachineUserName;
 Set-AzKeyVaultSecret -VaultName "$azSecretsManagerName" -Name 'buildMachinePassword' -SecretValue $buildMachinePassword;

@@ -51,6 +51,8 @@ jobs:
           }
 
           $projectNameHash = (Get-MD5HashOfString($env:PROJECT_NAME)).Substring(0,10);
+          $machineName = "$env:MACHINE_NAME"';
+          $machineRgName = "rg_$machineName";
           $azSecretsManagerName = "sm-" + $projectNameHash;
           $containerRegistryName = "crn-" + $projectNameHash;
           $repoURL = "${{ github.SERVER_URL }}/${{ github.REPOSITORY }}.git";
@@ -61,6 +63,8 @@ jobs:
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           Write-Host ("projectName value: {0}" -f $env:PROJECT_NAME);
+          Write-Host ("machineName value: {0}" -f $machineName);
+          Write-Host ("machineRgName value: {0}" -f $machineRgName);
           Write-Host ("msSqlVersionForMatrix: {0}" -f "$msSqlVersionForMatrix"); 
           Write-Host ("azSecretsManagerName: {0}" -f "$azSecretsManagerName"); 
           Write-Host ("containerRegistryName: {0}" -f "$containerRegistryName"); 
@@ -72,6 +76,8 @@ jobs:
           Write-Host ('::set-output name=azsecretsmanagername::'+$azSecretsManagerName);
           Write-Host ('::set-output name=containerregistryname::'+$containerRegistryName);
           Write-Host ('::set-output name=repoURL::'+$repoURL);
+          Write-Host ('::set-output name=machineName::'+$machineName);
+          Write-Host ('::set-output name=machineRgName::'+$machineRgName);
           Write-Host ('::set-output name=commitId::'+$commitId);
           Write-Host ("::set-output name=msSqlVersionForMatrix::{0}" -f "$msSqlVersionForMatrix"); 
            
@@ -100,6 +106,7 @@ jobs:
           secrets: 'azResourceGroupName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
 
       - name: run azure powershell script
+        id: buildMachine-ps
         uses: azure/powershell@v1
         with:
           azpsversion: 'latest'
@@ -109,9 +116,10 @@ jobs:
               projectName = "$env:PROJECT_NAME";
               azSecretsManagerName = "${{ steps.create-vars.outputs.azsecretsmanagername }}";
               azResourceGroupName = "${{ steps.azure-secrets.outputs.azResourceGroupName }}";
+              machineRgName = "${{ steps.create-vars.outputs.machineRgName }}";
               repoURL = "${{ steps.create-vars.outputs.repoURL }}";
               commitId = "${{ steps.create-vars.outputs.commitId }}";
-              azVMName = "$env:MACHINE_NAME";
+              machineName = "${{ steps.create-vars.outputs.machineName }}";
               debugOn = $true;
             }; 
             ./cicd/envSetup/createContainerBuildMachine.ps1 @Parameters; 
@@ -120,6 +128,8 @@ jobs:
       mssqlversion: ${{ steps.create-vars.outputs.msSqlVersionForMatrix }}
       containerregistryname: ${{ steps.create-vars.outputs.containerRegistryName }}
       azsecretsmanagername: ${{ steps.create-vars.outputs.azSecretsManagerName }}
+      machineRgName: ${{ steps.create-vars.outputs.machineRgName }}
+      machineName: ${{ steps.create-vars.outputs.machineName }}
 
 
 
