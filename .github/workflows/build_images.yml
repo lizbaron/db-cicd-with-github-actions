@@ -183,10 +183,14 @@ jobs:
 #################################-#####################-#############-########-#####-###-##-#
   drop-vm:
     name: drop the VM
-    needs: create-images   #TODO: GitHub Actions Cleanup Job???
+    needs: [create-vm, create-images]
     if: always()
 
     runs-on: windows-latest
+
+    env:
+      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
+      MACHINE_RG_NAME: ${{ needs.create-vm.outputs.machinergname }}
 
     steps:
       - name: decode az sp cred
@@ -202,5 +206,15 @@ jobs:
         with:
           creds: ${{ steps.cred-decode.outputs.az_sp_creds }}
           enable-AzPSSession: true 
+
+      - name: drop image build machine resource group script
+        id: dropBuildMachine-ps
+        uses: azure/powershell@v1
+        with:
+          azpsversion: 'latest'
+          errorActionPreference: 'continue'
+          inlineScript: |
+            Remove-AzResourceGroup -Name "$env:MACHINE_RG_NAME" -Force ;
+
 
 
