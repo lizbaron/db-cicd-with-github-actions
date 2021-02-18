@@ -184,6 +184,7 @@ jobs:
   drop-vm:
     name: drop the VM
     needs: create-images   #TODO: GitHub Actions Cleanup Job???
+    if: always()
 
     runs-on: windows-latest
 

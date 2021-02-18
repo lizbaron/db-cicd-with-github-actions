@@ -34,7 +34,7 @@ while ("Succeeded" -ne (az group list --query "[?name=='$azResourceGroupName'].{
 # or it will break AKS later down the line (in the case of the single quote).
 Do {
     Write-Output "Generating Credentials";
-    $spCredential = az ad sp create-for-rbac -n "$azServicePrincipalName" --sdk-auth --role contributor --scopes "/subscriptions/$azSubscriptionId/resourceGroups/$azResourceGroupName";
+    $spCredential = az ad sp create-for-rbac -n "$azServicePrincipalName" --sdk-auth --role contributor --scopes "/subscriptions/$azSubscriptionId";
 } While (
     ($spCredential.Split("`r`n").Split("`r").Split("`n") | Where-Object { $_ -match "^\s*`"clientSecret`"\s*:\s*`"[^`"]*[`"'][^`"]*`"\s*,?\s*$" }).count -gt 0
 );
@@ -77,4 +77,3 @@ while ((az provider list --query ("[?contains('", ($serviceProviders -join '|'),
         throw "Something catastrophic has happened! The expected registration states were not found after $waitTimeLimit seconds.";
     }
 }
-
