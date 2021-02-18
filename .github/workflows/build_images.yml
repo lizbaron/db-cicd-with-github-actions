@@ -51,7 +51,7 @@ jobs:
           }
 
           $projectNameHash = (Get-MD5HashOfString($env:PROJECT_NAME)).Substring(0,10);
-          $machineName = "$env:MACHINE_NAME"';
+          $machineName = "$env:MACHINE_NAME";
           $machineRgName = "rg_$machineName";
           $azSecretsManagerName = "sm-" + $projectNameHash;
           $containerRegistryName = "crn-" + $projectNameHash;
@@ -128,8 +128,8 @@ jobs:
       mssqlversion: ${{ steps.create-vars.outputs.msSqlVersionForMatrix }}
       containerregistryname: ${{ steps.create-vars.outputs.containerRegistryName }}
       azsecretsmanagername: ${{ steps.create-vars.outputs.azSecretsManagerName }}
-      machineRgName: ${{ steps.create-vars.outputs.machineRgName }}
-      machineName: ${{ steps.create-vars.outputs.machineName }}
+      machinergname: ${{ steps.create-vars.outputs.machineRgName }}
+      machinename: ${{ steps.create-vars.outputs.machineName }}
 
 
 
@@ -137,13 +137,14 @@ jobs:
   create-images:
     name: create and publish the ACR images
     needs: create-vm
-    if: ${{ false }}
 
     runs-on: windows-latest
 
     env:
       AZ_CONTAINER_REGISTRY_NAME: ${{ needs.create-vm.outputs.containerregistryname }}
       AZ_SECRETS_MANAGER_NAME: ${{ needs.create-vm.outputs.azsecretsmanagername }}
+      MACHINE_NAME: ${{ needs.create-vm.outputs.machinename }}
+      MACHINE_RG_NAME: ${{ needs.create-vm.outputs.machinergname }}
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
 
     strategy:
@@ -159,21 +160,17 @@ jobs:
       - name: build and push docker image
         shell: pwsh
         run: |
-          $sqlPortArray = ('${{ needs.set-up-k8s-env.outputs.ports }}'|ConvertFrom-Json)  ;
           $mssqlversion = '${{ matrix.mssqlversion }}';
-          $sqlPort = $sqlPortArray.${{ matrix.mssqlversion }}
 
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          Write-Host ("sqlPort value: {0}" -f $sqlPort); 
+          Write-Host ("mssqlversion: {0}" -f "$mssqlversion"); 
+          Write-Host ("azContainerRegistryName: {0}" -f "$env:AZ_CONTAINER_REGISTRY_NAME"); 
           Write-Host ("azSecretsManagerName: {0}" -f "$env:AZ_SECRETS_MANAGER_NAME"); 
-          Write-Host ("namespace: {0}" -f "$env:NAMESPACE"); 
+          Write-Host ("machineName: {0}" -f "$env:MACHINE_NAME"); 
+          Write-Host ("machineRGName: {0}" -f "$env:MACHINE_RG_NAME"); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-
-          $sqlcmdPath = (Get-Command sqlcmd).Path.TrimEnd("\\SQLCMD.EXE");
-          echo "sqlPort=$sqlPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "sqlcmdPath=$sqlcmdPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: decode az sp cred
         id: cred-decode
@@ -183,17 +180,21 @@ jobs:
           Write-Host ('::set-output name=az_sp_creds::'+$decodedCreds);
 
 
-
-
 #################################-#####################-#############-########-#####-###-##-#
   drop-vm:
     name: drop the VM
     needs: create-images   #TODO: GitHub Actions Cleanup Job???
-    if: ${{ false }}
 
     runs-on: windows-latest
 
     steps:
+      - name: decode az sp cred
+        id: cred-decode
+        shell: pwsh
+        run: |
+          $decodedCreds = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}"))
+          Write-Host ('::set-output name=az_sp_creds::'+$decodedCreds);
+
       # documentation: https://github.com/azure/login#configure-azure-credentials
       - name: login via az module
         uses: azure/login@v1
@@ -201,14 +202,4 @@ jobs:
           creds: ${{ steps.cred-decode.outputs.az_sp_creds }}
           enable-AzPSSession: true 
 
-      # documentation: https://github.com/Azure/get-keyvault-secrets
-      - name: get azure secrets
-      # TODO: Consider deleting this task and getting these manually and setting them as secrets.
-        uses: Azure/get-keyvault-secrets@v1.0
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
-        with:
-          keyvault: ${{ env.AZ_SECRETS_MANAGER_NAME }}
-          secrets: 'azResourceGroupName, aksClusterName, containerRegistryName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
-        id: azure-secrets
 
