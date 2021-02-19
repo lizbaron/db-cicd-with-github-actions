@@ -1,6 +1,7 @@
 Param(
-    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$repoURL,
-    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$commitId,
+    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$mssqlVersion,
+    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$acrURL, # eg. crn1234567890.azurecr.io
+    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][SecureString]$azSpCreds,
     $debugOnString="false"
 );
 
@@ -9,15 +10,14 @@ if ($debugOn) {
     $DebugPreference = "Continue";
 }
 
-Set-ExecutionPolicy Bypass -Scope Process -Force;
-[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;
-iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) ;
-choco feature disable --name showDownloadProgress ;
+$azSpCredsConverted = ConvertFrom-SecureString -SecureString $azSpCreds -AsPlainText;
+$decodedCreds = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("$azSpCredsConverted"));
+$decodedCredsAsHash = (ConvertFrom-Json -InputObject $decodedCreds -AsHashtable) ;
 
-choco install git --force --force-dependencies -y;
+cd sourceRepo;
 
-& 'C:\Program Files\Git\cmd\git.exe' clone $repoURL sourceRepo ;
-cd sourceRepo ;
-& 'C:\Program Files\Git\cmd\git.exe' checkout $commitId ; 
+docker login $acrURL --username $decodedCredsAsHash.clientId --password $decodedCredsAsHash.clientSecret
 
-Get-ChildItem -Recurse -Path ./sourceRepo ;
+docker build . --file .\$mssqlVersion\Dockerfile --isolation=process -t $acrURL/mssql:$mssqlVersion
+
+docker push $acrURL/$mssqlVersion

@@ -27,7 +27,7 @@ jobs:
   create-vm:
     name: Create The VM
     runs-on: windows-latest 
-    if: ${{ false }}
+#    if: ${{ false }}
 
     env:
       PROJECT_NAME: ${{ github.event.inputs.projectName }}
@@ -59,7 +59,7 @@ jobs:
           $machineName = "$env:MACHINE_NAME";
           $machineRgName = "rg_$machineName";
           $azSecretsManagerName = "sm-" + $projectNameHash;
-          $containerRegistryName = "crn-" + $projectNameHash;
+          $containerRegistryURL = "crn" + $projectNameHash + ".azurecr.io";
           $repoURL = "${{ github.SERVER_URL }}/${{ github.REPOSITORY }}.git";
           $commitId = "${{ github.SHA }}" ;
           $msSqlVersionForMatrix = '{"mssqlversion":'+$env:MS_SQL_VERSIONS+'}';
@@ -72,14 +72,14 @@ jobs:
           Write-Host ("machineRgName value: {0}" -f $machineRgName);
           Write-Host ("msSqlVersionForMatrix: {0}" -f "$msSqlVersionForMatrix"); 
           Write-Host ("azSecretsManagerName: {0}" -f "$azSecretsManagerName"); 
-          Write-Host ("containerRegistryName: {0}" -f "$containerRegistryName"); 
+          Write-Host ("containerRegistryURL: {0}" -f "$containerRegistryURL"); 
           Write-Host ("repoURL: {0}" -f "$repoURL"); 
           Write-Host ("commitId: {0}" -f "$commitId"); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           
           Write-Host ('::set-output name=azsecretsmanagername::'+$azSecretsManagerName);
-          Write-Host ('::set-output name=containerregistryname::'+$containerRegistryName);
+          Write-Host ('::set-output name=containerregistryurl::'+$containerRegistryURL);
           Write-Host ('::set-output name=repoURL::'+$repoURL);
           Write-Host ('::set-output name=machineName::'+$machineName);
           Write-Host ('::set-output name=machineRgName::'+$machineRgName);
@@ -131,7 +131,7 @@ jobs:
 
     outputs:
       mssqlversion: ${{ steps.create-vars.outputs.msSqlVersionForMatrix }}
-      containerregistryname: ${{ steps.create-vars.outputs.containerRegistryName }}
+      containerregistryurl: ${{ steps.create-vars.outputs.containerregistryurl }}
       azsecretsmanagername: ${{ steps.create-vars.outputs.azSecretsManagerName }}
       machinergname: ${{ steps.create-vars.outputs.machineRgName }}
       machinename: ${{ steps.create-vars.outputs.machineName }}
@@ -146,7 +146,7 @@ jobs:
     runs-on: windows-latest
 
     env:
-      AZ_CONTAINER_REGISTRY_NAME: ${{ needs.create-vm.outputs.containerregistryname }}
+      AZ_CONTAINER_REGISTRY_URL: ${{ needs.create-vm.outputs.containerregistryurl }}
       AZ_SECRETS_MANAGER_NAME: ${{ needs.create-vm.outputs.azsecretsmanagername }}
       MACHINE_NAME: ${{ needs.create-vm.outputs.machinename }}
       MACHINE_RG_NAME: ${{ needs.create-vm.outputs.machinergname }}
@@ -170,7 +170,7 @@ jobs:
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           Write-Host ("mssqlversion: {0}" -f "$mssqlversion"); 
-          Write-Host ("azContainerRegistryName: {0}" -f "$env:AZ_CONTAINER_REGISTRY_NAME"); 
+          Write-Host ("azContainerRegistryURL: {0}" -f "$env:AZ_CONTAINER_REGISTRY_URL"); 
           Write-Host ("azSecretsManagerName: {0}" -f "$env:AZ_SECRETS_MANAGER_NAME"); 
           Write-Host ("machineName: {0}" -f "$env:MACHINE_NAME"); 
           Write-Host ("machineRGName: {0}" -f "$env:MACHINE_RG_NAME"); 
@@ -181,7 +181,7 @@ jobs:
         id: cred-decode
         shell: pwsh
         run: |
-          $decodedCreds = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}"))
+          $decodedCreds = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}"));
           Write-Host ('::set-output name=az_sp_creds::'+$decodedCreds);
 
       # documentation: https://github.com/azure/login#configure-azure-credentials
@@ -198,10 +198,9 @@ jobs:
           azpsversion: 'latest'
           errorActionPreference: 'continue'
           inlineScript: |
+            $secureAzSpCreds = ConvertTo-SecureString -String "${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}" -AsPlainText -Force;
             $builImageScriptPath = (Split-Path $MyInvocation.MyCommand.Path -Parent) + '\buildAndPushImage.ps1';
-#            Invoke-AzVMRunCommand -ResourceGroupName $env:MACHINE_RG_NAME -VMName $env:MACHINE_NAME -CommandId 'RunPowerShellScript' -ScriptPath $builImageScriptPath -Parameter @{repoURL = "$repoURL"; commitId = "$commitId"; debugOnString = "$debugOn"}
-
-
+            Invoke-AzVMRunCommand -ResourceGroupName $env:MACHINE_RG_NAME -VMName $env:MACHINE_NAME -CommandId 'RunPowerShellScript' -ScriptPath $builImageScriptPath -Parameter @{mssqlVersion = "${{ matrix.mssqlversion }}"; acrURL = "$env:AZ_CONTAINER_REGISTRY_URL"; azSpCreds = "$secureAzSpCreds"; debugOnString = "$debugOn"}
 
 
 #################################-#####################-#############-########-#####-###-##-#
