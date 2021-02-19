@@ -215,9 +215,15 @@ jobs:
     env:
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
       MACHINE_RG_NAME: ${{ needs.create-vm.outputs.machinergname }}
-      DEBUG_VM: ${{ github.event.inputs.debugVM }}
 
     steps:
+      - name: check debug VM
+        shell: pwsh
+        if: ${{ github.event.inputs.debugVM == 'true' }}
+        run: |
+            Write-Host ("::error::✨   ✨   ✨TURN OFF THE VM WHEN YOU ARE DONE!✨   ✨   ✨");
+            exit 1; 
+
       - name: decode az sp cred
         id: cred-decode
         shell: pwsh
@@ -239,12 +245,6 @@ jobs:
           azpsversion: 'latest'
           errorActionPreference: 'continue'
           inlineScript: |
-            if ($env:DEBUG_VM -eq 'false') {
-              Remove-AzResourceGroup -Name "$env:MACHINE_RG_NAME" -Force ;
-            }
-            else {
-              Write-Host ("::error::✨   ✨   ✨TURN OFF THE VM WHEN YOU ARE DONE!✨   ✨   ✨");
-            }
-
+            Remove-AzResourceGroup -Name "$env:MACHINE_RG_NAME" -Force ;
 
 
