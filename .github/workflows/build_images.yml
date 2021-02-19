@@ -17,12 +17,17 @@ on:
         description: 'names of the k8s deployment files in JSON array format (e.g. ["mssql2008r2","mssql2012","mssql2014","mssql2016","mssql2017","mssql2019"])'
         required: true
         default: '["mssql2016"]'
+      debugVM:
+        description: 'set to "true" to retain the VM for debugging purposes'
+        required: false
+        default: 'false'
 
 
 jobs:
   create-vm:
     name: Create The VM
     runs-on: windows-latest 
+    if: false()
 
     env:
       PROJECT_NAME: ${{ github.event.inputs.projectName }}
@@ -179,6 +184,25 @@ jobs:
           $decodedCreds = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}"))
           Write-Host ('::set-output name=az_sp_creds::'+$decodedCreds);
 
+      # documentation: https://github.com/azure/login#configure-azure-credentials
+      - name: login via az module
+        uses: azure/login@v1
+        with:
+          creds: ${{ steps.cred-decode.outputs.az_sp_creds }}
+          enable-AzPSSession: true 
+
+      - name: build and push image script
+        id: build-and-push-image
+        uses: azure/powershell@v1
+        with:
+          azpsversion: 'latest'
+          errorActionPreference: 'continue'
+          inlineScript: |
+            $builImageScriptPath = (Split-Path $MyInvocation.MyCommand.Path -Parent) + '\buildAndPushImage.ps1';
+#            Invoke-AzVMRunCommand -ResourceGroupName $env:MACHINE_RG_NAME -VMName $env:MACHINE_NAME -CommandId 'RunPowerShellScript' -ScriptPath $builImageScriptPath -Parameter @{repoURL = "$repoURL"; commitId = "$commitId"; debugOnString = "$debugOn"}
+
+
+
 
 #################################-#####################-#############-########-#####-###-##-#
   drop-vm:
@@ -191,6 +215,7 @@ jobs:
     env:
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
       MACHINE_RG_NAME: ${{ needs.create-vm.outputs.machinergname }}
+      DEBUG_VM: ${{ github.event.inputs.debugVM }}
 
     steps:
       - name: decode az sp cred
@@ -214,7 +239,12 @@ jobs:
           azpsversion: 'latest'
           errorActionPreference: 'continue'
           inlineScript: |
-            Remove-AzResourceGroup -Name "$env:MACHINE_RG_NAME" -Force ;
+            if ($env:DEBUG_VM -eq 'false') {
+              Remove-AzResourceGroup -Name "$env:MACHINE_RG_NAME" -Force ;
+            }
+            else {
+              Write-Host ("::error::✨   ✨   ✨TURN OFF THE VM WHEN YOU ARE DONE!✨   ✨   ✨");
+            }
 
 
 
