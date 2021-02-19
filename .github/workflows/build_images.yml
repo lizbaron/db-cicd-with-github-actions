@@ -198,9 +198,8 @@ jobs:
           azpsversion: 'latest'
           errorActionPreference: 'continue'
           inlineScript: |
-            $secureAzSpCreds = ConvertTo-SecureString -String "${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}" -AsPlainText -Force;
-            $builImageScriptPath = (Split-Path $MyInvocation.MyCommand.Path -Parent) + '\buildAndPushImage.ps1';
-            Invoke-AzVMRunCommand -ResourceGroupName $env:MACHINE_RG_NAME -VMName $env:MACHINE_NAME -CommandId 'RunPowerShellScript' -ScriptPath $builImageScriptPath -Parameter @{mssqlVersion = "${{ matrix.mssqlversion }}"; acrURL = "$env:AZ_CONTAINER_REGISTRY_URL"; azSpCreds = "$secureAzSpCreds"; debugOnString = "$debugOn"}
+            $builImageScriptPath = 'cicd\envSetup\buildAndPushImage.ps1';
+            Invoke-AzVMRunCommand -ResourceGroupName $env:MACHINE_RG_NAME -VMName $env:MACHINE_NAME -CommandId 'RunPowerShellScript' -ScriptPath $builImageScriptPath -Parameter @{mssqlVersion = "${{ matrix.mssqlversion }}"; acrURL = "$env:AZ_CONTAINER_REGISTRY_URL"; azSpCrBase64 = "${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}"; debugOnString = "$debugOn"}
 
 
 #################################-#####################-#############-########-#####-###-##-#

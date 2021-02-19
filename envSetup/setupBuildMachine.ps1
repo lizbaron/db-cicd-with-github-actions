@@ -16,8 +16,11 @@ choco feature disable --name showDownloadProgress ;
 
 choco install git --force --force-dependencies -y;
 
+# Let's check stuff out in our home directory
+Set-Location -Path ~
+
 & 'C:\Program Files\Git\cmd\git.exe' clone $repoURL sourceRepo ;
-cd sourceRepo ;
+Set-Location -Path sourceRepo ;
 & 'C:\Program Files\Git\cmd\git.exe' checkout $commitId ; 
 
 Get-ChildItem -Recurse -Path ./sourceRepo ;

@@ -1,7 +1,7 @@
 Param(
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$mssqlVersion,
     [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$acrURL, # eg. crn1234567890.azurecr.io
-    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][SecureString]$azSpCreds,
+    [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$azSpCrBase64,
     $debugOnString="false"
 );
 
@@ -10,13 +10,12 @@ if ($debugOn) {
     $DebugPreference = "Continue";
 }
 
-$azSpCredsConverted = ConvertFrom-SecureString -SecureString $azSpCreds -AsPlainText;
-$decodedCreds = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("$azSpCredsConverted"));
-$decodedCredsAsHash = (ConvertFrom-Json -InputObject $decodedCreds -AsHashtable) ;
+$decodedCreds = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("$azSpCrBase64"));
+$creds = (ConvertFrom-Json -InputObject $decodedCreds) ;
 
-cd sourceRepo;
+Set-Location -Path ~\sourceRepo;
 
-docker login $acrURL --username $decodedCredsAsHash.clientId --password $decodedCredsAsHash.clientSecret
+docker login $acrURL --username $creds.clientId --password $creds.clientSecret
 
 docker build . --file .\$mssqlVersion\Dockerfile --isolation=process -t $acrURL/mssql:$mssqlVersion
 
