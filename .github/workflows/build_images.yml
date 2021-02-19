@@ -27,7 +27,7 @@ jobs:
   create-vm:
     name: Create The VM
     runs-on: windows-latest 
-    if: false()
+    if: ${{ false }}
 
     env:
       PROJECT_NAME: ${{ github.event.inputs.projectName }}
@@ -208,7 +208,7 @@ jobs:
   drop-vm:
     name: drop the VM
     needs: [create-vm, create-images]
-    if: always()
+    if: ${{ always() }}
 
     runs-on: windows-latest
 
