@@ -16,7 +16,7 @@ on:
       msSqlVersions:
         description: 'names of the k8s deployment files in JSON array format (e.g. ["mssql2008r2","mssql2012","mssql2014","mssql2016","mssql2017","mssql2019"])'
         required: true
-        default: '["mssql2016"]'
+        default: '["mssql2014","mssql2016","mssql2017","mssql2019"]'
       debugVM:
         description: 'set to "true" to retain the VM for debugging purposes'
         required: false

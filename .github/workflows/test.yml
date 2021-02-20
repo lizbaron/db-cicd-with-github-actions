@@ -1,65 +1,40 @@
-name: Test Stuff
+name: Test interpreting matrix variables in a deployment file
 
 # Controls when the action will run. 
 on:
   push:
     branches:
-      - breaking-things
+      - image-pipeline
 
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
 
   job-1:
-    name: set vars
-    runs-on: windows-latest # Kubectl 1.20
-
-    steps:
-      - name: create vars
-        id: create-vars
-        shell: pwsh
-        run: |
-          $mssqlversion = @("2017","2019");
-          
-          $matrixData = @{};
-          $mssqlversion|%{$matrixData += @{$_=@{mssqlversion=$_;port=41417;quotes="'3'"}}}
-
-          $mssqlversionString = '{"mssqlversion":'+($mssqlversion|ConvertTo-Json -compress)+'}'
-          $matrixDataString = ($matrixData|ConvertTo-Json -compress).replace("'","''")
-
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Write-Host "";
-          Write-Host ("mssqlversionString: {0}" -f "$mssqlversionString"); 
-          Write-Host ("matrixDataString: {0}" -f "$matrixDataString"); 
-          Write-Host "";
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-
-
-          Write-Host ('::set-output name=mssqlversion::'+$mssqlversionString)
-          Write-Host ('::set-output name=matrixdata::'+$matrixDataString)
-          
-    outputs:
-      mssqlversion: ${{ steps.create-vars.outputs.mssqlversion }}
-      matrixdata: ${{ steps.create-vars.outputs.matrixdata }}
-
-  job-2:
-    name: read vars
-    needs: job-1
+    name: interpreting matrix vars
     runs-on: windows-latest # Kubectl 1.20
 
     strategy:
-      matrix: ${{fromJson(needs.job-1.outputs.mssqlversion)}}
- 
+      matrix: 
+        mssqlversion: ["mssql2014", "mssql2016", "mssql2017", "mssql2019"]
+
     steps:
-      - name: print vars
-        id: print-vars
+      - name: use matrix vars
+        id: use-vars
         shell: pwsh
         run: |
-          $matrixData = ('${{ needs.job-1.outputs.matrixdata }}'|ConvertFrom-Json)
-          $cc=$matrixData.${{ matrix.mssqlversion }}
-          $cc|FT
-          $cc.port
+          
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          Write-Host ("mssqlversionString: {0}" -f "${{ matrix.mssqlversion }}"); 
+          Write-Host "";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Get-Content -Path .\mssql.deployment.template.yml > ${{ matrix.mssqlversion }}.deployment.yml
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
-
-
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Get-Content -Path .\${{ matrix.mssqlversion }}.deployment.yml
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
