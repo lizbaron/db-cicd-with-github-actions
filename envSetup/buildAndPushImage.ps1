@@ -13,10 +13,10 @@ if ($debugOn) {
 $decodedCreds = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("$azSpCrBase64"));
 $creds = (ConvertFrom-Json -InputObject $decodedCreds) ;
 
-Set-Location -Path ~\sourceRepo;
+Set-Location -Path ~\sourceRepo\docker;
 
 docker login $acrURL --username $creds.clientId --password $creds.clientSecret
 
-docker build . --file .\$mssqlVersion\Dockerfile --isolation=process -t $acrURL/mssql:$mssqlVersion
+docker build . --file Dockerfile.$mssqlVersion --isolation=process -t $acrURL/mssql:$mssqlVersion
 
 docker push $acrURL/$mssqlVersion
