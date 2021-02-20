@@ -19,4 +19,4 @@ docker login $acrURL --username $creds.clientId --password $creds.clientSecret
 
 docker build . --file Dockerfile.$mssqlVersion --isolation=process -t $acrURL/mssql:$mssqlVersion
 
-docker push $acrURL/$mssqlVersion
+docker push $acrURL/mssql:$mssqlVersion
