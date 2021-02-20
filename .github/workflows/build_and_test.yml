@@ -4,7 +4,7 @@
 # AZURE: Before this workflow will run successfully you must do the following
 # 1. Run the github action workflow, "cicd_environment_setup.yml"
 
-name: CI Build and Test
+name: Build and Test tSQLt
 
 # Controls when the action will run. 
 on:

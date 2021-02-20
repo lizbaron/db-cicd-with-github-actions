@@ -1,4 +1,4 @@
-name: Test interpreting matrix variables in a deployment file
+name: Test Pipeline 1
 
 # Controls when the action will run. 
 on:

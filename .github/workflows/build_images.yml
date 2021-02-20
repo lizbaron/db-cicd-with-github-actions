@@ -1,6 +1,6 @@
 # This workflow creates the ACR images for the different suported SQL Server versions.
 
-name: Create And Publish Container Images To ACR
+name: Build MSSQL Images
 
 on:
   workflow_dispatch: 
