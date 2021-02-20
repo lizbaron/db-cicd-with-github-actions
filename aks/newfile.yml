@@ -5,24 +5,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: matrix.mssqlversion-deployment
+  name: ${{ matrix.mssqlversion }}-deployment
   labels:
-    app: matrix.mssqlversion-db
+    app: ${{ matrix.mssqlversion }}-db
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: matrix.mssqlversion-db
+      app: ${{ matrix.mssqlversion }}-db
   template:
     metadata:
       labels:
-        app: matrix.mssqlversion-db
+        app: ${{ matrix.mssqlversion }}-db
     spec:
       nodeSelector:
         agentpool: akswin
       containers:
-      - name: matrix.mssqlversion-db
-        image: containerRegistryName/mssql:matrix.mssqlversion
+      - name: ${{ matrix.mssqlversion }}-db
+        image: containerRegistryName/mssql:${{ matrix.mssqlversion }}
         command: [ "echo", "SUCCESS" ]        
         resources:
           limits:

@@ -35,10 +35,9 @@ jobs:
           Write-Host ("mssqlversionString: {0}" -f "${{ matrix.mssqlversion }}"); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
           
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Get-Content -Path .\cicd\aks\mssql.deployment.template.yml > .\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          (Get-Content -Path .\cicd\aks\mssql.deployment.template.yml) -replace 'matrix.mssqlversion','${{ matrix.mssqlversion }}' > .\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
 
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Get-Content -Path .\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
