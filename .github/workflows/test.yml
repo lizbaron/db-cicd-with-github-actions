@@ -19,6 +19,12 @@ jobs:
         mssqlversion: ["mssql2014", "mssql2016", "mssql2017", "mssql2019"]
 
     steps:
+      - name: Checkout self
+        uses: actions/checkout@v2
+        with:
+          path: cicd
+
+
       - name: use matrix vars
         id: use-vars
         shell: pwsh
@@ -31,10 +37,10 @@ jobs:
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Get-Content -Path .\mssql.deployment.template.yml > ${{ matrix.mssqlversion }}.deployment.yml
+          Get-Content -Path .\cicd\aks\mssql.deployment.template.yml > .\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Get-Content -Path .\${{ matrix.mssqlversion }}.deployment.yml
+          Get-Content -Path .\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
