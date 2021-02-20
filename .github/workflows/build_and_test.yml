@@ -314,9 +314,15 @@ jobs:
         run: |
           kubectl get namespace
 
-          # @SM --> TODO: We should seriously consider using helm to deploy a chart, so that we can do a more socially acceptable token replacement in the deployment.yaml file.
-          ((Get-Content -path ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml -Raw) -replace 'image: containerRegistryName/',"image: ${{ steps.azure-secrets.outputs.containerRegistryName }}.azurecr.io") | Set-Content -Path ${{ matrix.mssqlversion }}.deployment.yml
-          kubectl apply -f ${{ matrix.mssqlversion }}.deployment.yml
+          $replaceMssqlversion = (Get-Content -Path ${{ github.workspace }}\cicd\aks\mssql.deployment.template.yml) -replace 'matrix.mssqlversion','${{ matrix.mssqlversion }}'
+          $replaceAcrURL = $replaceMssqlversion -replace 'containerRegistryName','${{ steps.azure-secrets.outputs.containerRegistryName }}.azurecr.io'
+          $replaceAcrURL | Set-Content -Path ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
+
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Get-Content -Path .\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+
+          kubectl apply -f ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
           kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=$env:sqlPort --target-port=1433
           kubectl wait pod --for=condition=Ready --all --timeout 600s # Experimental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
           

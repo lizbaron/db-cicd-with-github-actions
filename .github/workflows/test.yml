@@ -4,7 +4,7 @@ name: Test interpreting matrix variables in a deployment file
 on:
   push:
     branches:
-      - image-pipeline
+      - does-not-exist
 
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
