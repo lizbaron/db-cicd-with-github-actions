@@ -154,6 +154,7 @@ jobs:
 
     strategy:
       matrix: ${{fromJson(needs.create-vm.outputs.mssqlversion)}}
+      max-parallel: 1
 
     steps:
 
