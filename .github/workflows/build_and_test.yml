@@ -365,7 +365,18 @@ jobs:
           kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -l 60 -Q "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;"
           Write-Host "";
           Write-Host "Update sa password";
-          kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -l 60 -Q "ALTER LOGIN sa with password='"+$env:SA_PASSWORD+"' ,CHECK_POLICY=OFF,CHECK_EXPIRATION=OFF;"
+          $sqlStatement = "ALTER LOGIN sa with password='" + "$env:SA_PASSWORD" + "',CHECK_POLICY=OFF,CHECK_EXPIRATION=OFF;";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          Write-Output $sqlStatement
+          Write-Host "";
+          $sqlStatement = "ALTER LOGIN sa with password='" + $env:SA_PASSWORD + "',CHECK_POLICY=OFF,CHECK_EXPIRATION=OFF;";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          Write-Output $sqlStatement
+          Write-Host "";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -l 60 -Q "$sqlStatement"
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
       - name: print sql version info
