@@ -229,7 +229,7 @@ jobs:
           creds: ${{ steps.cred-decode.outputs.az_sp_creds }}
           enable-AzPSSession: true 
 
-      - name: drop image build machine resource group script
+      - name: drop image script
         id: dropBuildMachine-ps
         uses: azure/powershell@v1
         with:

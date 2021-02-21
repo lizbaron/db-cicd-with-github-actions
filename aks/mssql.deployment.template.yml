@@ -23,7 +23,6 @@ spec:
       containers:
       - name: matrix.mssqlversion-db
         image: containerRegistryName/mssql:matrix.mssqlversion
-        command: [ "echo", "SUCCESS" ]        
         resources:
           limits:
             cpu: 1
