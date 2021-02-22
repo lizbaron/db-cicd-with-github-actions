@@ -88,7 +88,7 @@ jobs:
 
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   unknown-aks-action:
-    name: Unknown Actions for AKS
+    name: Unknown Action for AKS
     runs-on: windows-latest
     if: ${{ github.event.inputs.aks_action != 'stop' && github.event.inputs.aks_action != 'start'}}
 
