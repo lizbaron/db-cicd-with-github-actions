@@ -23,9 +23,8 @@ on:
         required: true
         default: 'true'
 
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
+# 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   build-tSQLt:
     name: build tSQLt
     # if: ${{ false }}
@@ -107,8 +106,7 @@ jobs:
           name: tSQLtAndTests
           path: "${{ env.artifact_dir }}\\"
 
-#-##-###-#####-########-#############-#####################-#################################
-
+# 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   set-up-k8s-env:
     needs: build-tSQLt
     name: set up k8s namespace
@@ -214,7 +212,7 @@ jobs:
       ports: ${{ steps.create-vars.outputs.ports }}
       azsecretsmanagername: ${{ steps.create-vars.outputs.azSecretsManagerName }}
 
-#################################-#####################-#############-########-#####-###-##-#
+# 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   test-tSQLt:
     name: test build artifacts
     needs: set-up-k8s-env
@@ -419,9 +417,7 @@ jobs:
           name: jUnitTests-${{ matrix.mssqlversion }}
           path: "${{ env.test_artifact_dir }}\\"
 
-# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
-##--##--##--##--##--##--##--##--##--##---##--##--##--##--##--##--##--##--##--##
-##--##--##--##--##--##--##--##--##--##---##--##--##--##--##--##--##--##--##--##
+# 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
 
     # - task: PowerShell@2
     #   name: TagArtifact

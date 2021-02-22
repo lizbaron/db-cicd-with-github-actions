@@ -1,0 +1,74 @@
+# This workflow creates the ACR images for the different suported SQL Server versions.
+
+name: Manage AKS
+
+on:
+  workflow_dispatch: 
+    inputs:
+      projectName:
+        description: 'Project Name'     
+        required: true
+        default: 'db_cicd_project'
+      aks_action:
+        description: 'AKS Action: start or stop'     
+        required: true
+        default: 'start'
+
+jobs:
+
+# 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
+  aks-action:
+    name: Start AKS
+    runs-on: windows-latest
+    if: ${{ github.event.inputs.aks_action == 'start' || github.event.inputs.aks_action == 'stop'}}
+
+    env:
+      PROJECT_NAME: ${{ github.event.inputs.projectName }}
+      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
+      
+    steps:
+      - name: decode az sp cred
+        id: cred-decode
+        shell: pwsh
+        run: |
+          $decodedCreds = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}"))
+          Write-Host ('::set-output name=az_sp_creds::'+$decodedCreds);
+
+       # documentation: https://github.com/azure/login#configure-azure-credentials
+      - name: login via az module
+        uses: azure/login@v1
+        with:
+          creds: ${{ steps.cred-decode.outputs.az_sp_creds }}
+          enable-AzPSSession: true 
+
+      # documentation: https://github.com/Azure/get-keyvault-secrets
+      - name: get azure secrets
+        id: azure-secrets
+        uses: Azure/get-keyvault-secrets@v1.0
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
+        with:
+          keyvault: ${{ steps.create-vars.outputs.azsecretsmanagername }}
+          secrets: 'azResourceGroupName,aksClusterName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
+
+      - name: start aks
+        id: start-aks-action
+        uses: azure/powershell@v1
+        with:
+          azpsversion: 'latest'
+          errorActionPreference: 'continue'
+          inlineScript: |
+            az aks ${{ github.event.inputs.aks_action }} --name ${{ steps.azure-secrets.outputs.aksClusterName }} --resource-group ${{ steps.azure-secrets.outputs.azResourceGroupName }}
+
+# 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
+  unknown-aks-action:
+    name: Stop Making Up Actions for AKS
+    runs-on: windows-latest
+    if: ${{ github.event.inputs.aks_action != 'stop' && github.event.inputs.aks_action != 'start'}}
+
+    steps:
+      - name: unknown action error
+        shell: pwsh
+        run: |
+            Write-Host ("::error::✨   ✨   ✨ stop and start are the only options! ✨   ✨   ✨");
+            exit 1; 
