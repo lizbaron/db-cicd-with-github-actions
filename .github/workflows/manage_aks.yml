@@ -18,7 +18,7 @@ jobs:
 
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   aks-action:
-    name: Start AKS
+    name: Apply Action to AKS
     runs-on: windows-latest
     if: ${{ github.event.inputs.aks_action == 'start' || github.event.inputs.aks_action == 'stop'}}
 
@@ -27,6 +27,32 @@ jobs:
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
       
     steps:
+      - name: create variables
+        id: create-vars
+        shell: pwsh
+        run: |
+          function Get-MD5HashOfString($string) {
+              $stringAsStream = [System.IO.MemoryStream]::new();
+              $writer = [System.IO.StreamWriter]::new($stringAsStream);
+              $writer.write($string);
+              $writer.Flush();
+              $stringAsStream.Position = 0;
+              $hashedString = (Get-FileHash -InputStream $stringAsStream).Hash;
+              return [String]$hashedString;
+          }
+
+          $projectNameHash = (Get-MD5HashOfString($env:PROJECT_NAME)).Substring(0,10);
+          $azSecretsManagerName = "sm-" + $projectNameHash;
+
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          Write-Host ("projectName value: {0}" -f $env:PROJECT_NAME);
+          Write-Host ("azSecretsManagerName: {0}" -f "$azSecretsManagerName"); 
+          Write-Host "";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          
+          Write-Host ('::set-output name=azsecretsmanagername::'+$azSecretsManagerName);
+           
       - name: decode az sp cred
         id: cred-decode
         shell: pwsh
@@ -51,8 +77,8 @@ jobs:
           keyvault: ${{ steps.create-vars.outputs.azsecretsmanagername }}
           secrets: 'azResourceGroupName,aksClusterName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
 
-      - name: start aks
-        id: start-aks-action
+      - name: aks action
+        id: aks-action
         uses: azure/powershell@v1
         with:
           azpsversion: 'latest'
@@ -62,7 +88,7 @@ jobs:
 
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   unknown-aks-action:
-    name: Stop Making Up Actions for AKS
+    name: Unknown Actions for AKS
     runs-on: windows-latest
     if: ${{ github.event.inputs.aks_action != 'stop' && github.event.inputs.aks_action != 'start'}}
 
