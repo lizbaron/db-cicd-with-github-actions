@@ -118,5 +118,5 @@ New-AzAksCluster -ServicePrincipalIdAndSecret $azServicePrincipalCreds -Resource
 New-AzAksNodePool -ResourceGroupName "$azResourceGroupName" -ClusterName "$aksClusterName" -OsType Windows -Name "$aksWinNodePoolName" -VMSetType VirtualMachineScaleSets -Count 1 -KubernetesVersion "$kubernetesVersion" -VmSize $windowsNodePoolDefaultVMSize;
 
 $containerRegistryURL = "$containerRegistryName.azurecr.io";
-
+az aks get-credentials --resource-group "$azResourceGroupName" --name "$aksClusterName"
 kubectl create secret docker-registry acr-secret --docker-server="$containerRegistryURL" --docker-username="$azServicePrincipalClientId" --docker-password="$azServicePrincipalClientSecret"
