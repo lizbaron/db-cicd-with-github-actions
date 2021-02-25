@@ -40,6 +40,6 @@ spec:
           - containerPort: 1433
             name: mssql
             protocol: TCP
-        imagePullSecrets:
-          - name: acr-secret
+      imagePullSecrets:
+      - name: acr-secret
 
