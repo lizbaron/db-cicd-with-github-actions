@@ -113,7 +113,6 @@ jobs:
 
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   set-up-k8s-env:
-    needs: build-tSQLt
     name: set up k8s namespace
 
     runs-on: windows-latest # Kubectl 1.20
@@ -220,7 +219,7 @@ jobs:
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   test-tSQLt:
     name: test build artifacts
-    needs: set-up-k8s-env
+    needs: [build-tSQLt,set-up-k8s-env]
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
     # Note: [https://kubernetes.io/docs/tasks/tools/install-kubectl/#before-you-begin]
