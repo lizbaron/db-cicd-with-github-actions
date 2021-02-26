@@ -21,12 +21,6 @@ on:
         description: 'set to "false" to allow all matrix jobs to run, even if some fail'
         required: true
         default: 'true'
-      debugNamespace:
-        description: 'set to "true" to retain the namespace for debugging purposes'
-        required: false
-        default: 'false'
-
-
 
 jobs:
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
