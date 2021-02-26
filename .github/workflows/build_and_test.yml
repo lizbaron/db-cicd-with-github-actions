@@ -59,7 +59,7 @@ jobs:
           path: tSQLt
           token: ${{ secrets.my_pat }}
           # Why do we need a token here? It's a public repository.
-          ref: release-2021-01-12
+          ref: login-timeout-to-60
 
       # documentation: This is just what you need to do...
       - name: create and install unofficial pfx file for signing dlls
