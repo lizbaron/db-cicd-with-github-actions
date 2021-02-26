@@ -113,7 +113,7 @@ jobs:
 
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   set-up-k8s-env:
-    name: set up k8s namespace
+    name: set up matrix variables
 
     runs-on: windows-latest # Kubectl 1.20
 
