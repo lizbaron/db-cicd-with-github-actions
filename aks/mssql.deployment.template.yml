@@ -23,13 +23,6 @@ spec:
       containers:
       - name: matrix.mssqlversion-db
         image: containerRegistryName/mssql:matrix.mssqlversion
-        resources:
-          limits:
-            cpu: 1
-            memory: 4G
-          requests:
-            cpu: .1
-            memory: 300M
         ports:
           - containerPort: 80
             name: other 
