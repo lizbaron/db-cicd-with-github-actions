@@ -142,7 +142,7 @@ jobs:
 
           $projectNameHash = (Get-MD5HashOfString($env:PROJECT_NAME)).Substring(0,10);
           $azSecretsManagerName = "sm-" + $projectNameHash;
-          $k8sNamespace = "ns-${{ github.run_id }}-${{ github.run_number }}";
+          $aksNamespace = "ns-${{ github.run_id }}-${{ github.run_number }}";
 
           $msSqlVersionArray = ($env:MS_SQL_VERSIONS|ConvertFrom-Json);
           $msSqlVersionForMatrix = '{"mssqlversion":'+$env:MS_SQL_VERSIONS+'}';
@@ -161,55 +161,16 @@ jobs:
           Write-Host ("azSecretsManagerName: {0}" -f "$azSecretsManagerName"); 
           Write-Host ("GitHub Run Id: {0}" -f "${{ github.run_id }}"); 
           Write-Host ("GitHub Run Number: {0}" -f "${{ github.run_number }}"); 
-          Write-Host ("k8sNamespace: {0}" -f "$k8sNamespace"); 
-          Write-Host ("k8s namespaces must be no longer than 63 chars https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names"); 
+          Write-Host ("aksNamespace: {0}" -f "$aksNamespace"); 
+          Write-Host ("aks namespaces must be no longer than 63 chars https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names"); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           
-          Write-Host ('::set-output name=namespace::'+$k8sNamespace);
+          Write-Host ('::set-output name=namespace::'+$aksNamespace);
           Write-Host ('::set-output name=ports::'+$serializedPorts);
           Write-Host ('::set-output name=azsecretsmanagername::'+$azSecretsManagerName);
           Write-Host ("::set-output name=msSqlVersionForMatrix::{0}" -f "$msSqlVersionForMatrix"); 
            
-      - name: decode az sp cred
-        id: cred-decode
-        shell: pwsh
-        run: |
-          $decodedCreds = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}"))
-          Write-Host ('::set-output name=az_sp_creds::'+$decodedCreds);
-
-       # documentation: https://github.com/azure/login#configure-azure-credentials
-      - name: login via az module
-        uses: azure/login@v1
-        with:
-          creds: ${{ steps.cred-decode.outputs.az_sp_creds }}
-          enable-AzPSSession: true 
-
-      # documentation: https://github.com/Azure/get-keyvault-secrets
-      - name: get azure secrets
-        id: azure-secrets
-        uses: Azure/get-keyvault-secrets@v1.0
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
-        with:
-          keyvault: ${{ steps.create-vars.outputs.azsecretsmanagername }}
-          secrets: 'azResourceGroupName, aksClusterName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
-
-      # Set the target AKS cluster.
-      - name: set aks context
-        uses: Azure/aks-set-context@v1
-        with:
-          creds: ${{ steps.cred-decode.outputs.az_sp_creds }}
-          cluster-name: ${{ steps.azure-secrets.outputs.aksClusterName }}
-          resource-group: ${{ steps.azure-secrets.outputs.azResourceGroupName }}
-
-      - name: create the aks namespace for this job
-        shell: pwsh
-        run: |
-          kubectl config current-context
-          kubectl get namespace
-          kubectl create namespace ${{ steps.create-vars.outputs.namespace }} 
-
     outputs:
       mssqlversion: ${{ steps.create-vars.outputs.msSqlVersionForMatrix }}
       namespace: ${{ steps.create-vars.outputs.namespace }}
@@ -236,7 +197,7 @@ jobs:
     strategy:
       matrix: ${{fromJson(needs.set-up-k8s-env.outputs.mssqlversion)}}
       fail-fast: ${{ fromJSON(github.event.inputs.fail-fast) }}
-      max-parallel: 3
+      #max-parallel: 3
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -254,23 +215,27 @@ jobs:
           token: ${{ secrets.my_pat }}
 
       - name: load namespace variables into env
+        id: create-vars
         shell: pwsh
         run: |
           $sqlPortArray = ('${{ needs.set-up-k8s-env.outputs.ports }}'|ConvertFrom-Json)  ;
           $mssqlversion = '${{ matrix.mssqlversion }}';
           $sqlPort = $sqlPortArray.${{ matrix.mssqlversion }}
+          $aksNamespaceName = "$env:NAMESPACE-${{ matrix.mssqlversion }}"
 
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           Write-Host ("sqlPort value: {0}" -f $sqlPort); 
           Write-Host ("azSecretsManagerName: {0}" -f "$env:AZ_SECRETS_MANAGER_NAME"); 
-          Write-Host ("namespace: {0}" -f "$env:NAMESPACE"); 
+          Write-Host ("namespace: {0}" -f "$aksNamespaceName"); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
           $sqlcmdPath = (Get-Command sqlcmd).Path.TrimEnd("\\SQLCMD.EXE");
-          echo "sqlPort=$sqlPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "sqlcmdPath=$sqlcmdPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          Write-Host ('::set-output name=namespace::'+$aksNamespaceName);
+          Write-Host ('::set-output name=sqlPort::'+$sqlPort);
+          Write-Host ('::set-output name=sqlcmdPath::'+$sqlcmdPath);
 
       - name: download tSQLtAndTests artifact
         uses: actions/download-artifact@v2
@@ -311,16 +276,18 @@ jobs:
           cluster-name: ${{ steps.azure-secrets.outputs.aksClusterName }}
           resource-group: ${{ steps.azure-secrets.outputs.azResourceGroupName }}
 
-      - name: set the aks namespace for kubectl
+      - name: create and set the aks namespace for this job
         shell: pwsh
         run: |
+          kubectl config current-context
+          kubectl get namespace
+          kubectl create namespace ${{ steps.create-vars.outputs.namespace }} 
           # MDP: set the namespace for kubectl so that you don't have to specify the namespace in all kubectl calls
-          kubectl config set-context --current --namespace=$env:NAMESPACE
+          kubectl config set-context --current --namespace=${{ steps.create-vars.outputs.namespace }} 
 
       - name: apply deployment to aks
         shell: pwsh
         run: |
-          kubectl get namespace
 
           $replaceMssqlversion = (Get-Content -Path ${{ github.workspace }}\cicd\aks\mssql.deployment.template.yml) -replace 'matrix.mssqlversion','${{ matrix.mssqlversion }}'
           $replaceAcrURL = $replaceMssqlversion -replace 'containerRegistryName','${{ steps.azure-secrets.outputs.containerRegistryName }}.azurecr.io'
@@ -331,7 +298,7 @@ jobs:
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
           kubectl apply -f ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
-          kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=$env:sqlPort --target-port=1433
+          kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=${{ steps.create-vars.outputs.sqlPort }} --target-port=1433
           kubectl wait pod --for=condition=Ready --all --timeout 600s # Experimental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
           
       - name: check service
@@ -351,7 +318,7 @@ jobs:
           # IMPORTANT (and, you've got to be kidding me):                                                     #
           # The space between the comma and the sqlPort is absolutely required to make the ANT Task work.     #
           #---------------------------------------------------------------------------------------------------#
-          $fqdnAndPort = $ipAddress + ", " + $env:sqlPort;
+          $fqdnAndPort = $ipAddress + ", " + ${{ steps.create-vars.outputs.sqlPort }};
           #-----------------------------^---------------------------------------------------------------------#
           #-----------------------------^---------------------------------------------------------------------#
 
@@ -397,7 +364,7 @@ jobs:
       # @SM --> TODO: jUnit results
       - name: ant Build/tSQLt.validatebuild.xml
         working-directory: ${{ github.workspace }}\tSQLt\Build
-        run: ant -buildfile tSQLt.validatebuild.xml all -D"db.server"="$env:fqdnAndPort" -D"db.name"=tSQLt_dev -D"db.login"="-U sa -P $env:SA_PASSWORD" -D"sqlcmd.path"="$env:sqlcmdPath"
+        run: ant -buildfile tSQLt.validatebuild.xml all -D"db.server"="$env:fqdnAndPort" -D"db.name"=tSQLt_dev -D"db.login"="-U sa -P $env:SA_PASSWORD" -D"sqlcmd.path"="${{ steps.create-vars.outputs.sqlcmdPath }}"
 
       - name: create junit artifact
         shell: pwsh
@@ -422,64 +389,13 @@ jobs:
           name: jUnitTests-${{ matrix.mssqlversion }}
           path: "${{ env.test_artifact_dir }}\\"
 
-# 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
-  drop-aks-namespace:
-    name: drop the aks namespace
-    needs: [set-up-k8s-env,test-tSQLt]
-    if: ${{ always() }}
-
-    runs-on: windows-latest
-
-    env:
-      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
-      AZ_SECRETS_MANAGER_NAME: ${{ needs.set-up-k8s-env.outputs.azsecretsmanagername }}
-      NAMESPACE: ${{ needs.set-up-k8s-env.outputs.namespace }}
-
-    steps:
-      - name: check debug VM
-        shell: pwsh
-        if: ${{ github.event.inputs.debugNamespace == 'true' }}
-        run: |
-            Write-Host ("::error::✨   ✨   ✨DELETE THE NAMESPACE WHEN YOU ARE DONE!✨   ✨   ✨");
-            exit 1; 
-
-      - name: decode az sp cred
-        id: cred-decode
-        shell: pwsh
-        run: |
-          $decodedCreds = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}"))
-          Write-Host ('::set-output name=az_sp_creds::'+$decodedCreds);
-
-      # documentation: https://github.com/azure/login#configure-azure-credentials
-      - name: login via az module
-        uses: azure/login@v1
-        with:
-          creds: ${{ steps.cred-decode.outputs.az_sp_creds }}
-          enable-AzPSSession: true 
-
-      # documentation: https://github.com/Azure/get-keyvault-secrets
-      - name: get azure secrets
-      # TODO: Consider deleting this task and getting these manually and setting them as secrets.
-        uses: Azure/get-keyvault-secrets@v1.0
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
-        with:
-          keyvault: ${{ env.AZ_SECRETS_MANAGER_NAME }}
-          secrets: 'azResourceGroupName, aksClusterName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
-        id: azure-secrets
-
-      # Set the target AKS cluster.
-      - name: set aks context
-        uses: Azure/aks-set-context@v1
-        with:
-          creds: ${{ steps.cred-decode.outputs.az_sp_creds }}
-          cluster-name: ${{ steps.azure-secrets.outputs.aksClusterName }}
-          resource-group: ${{ steps.azure-secrets.outputs.azResourceGroupName }}
-
       - name: delete the aks namespace
+        if: ${{ always() }}
         shell: pwsh
         run: |
-          kubectl delete namespaces $env:NAMESPACE
+          kubectl delete namespaces ${{ steps.create-vars.outputs.namespace }}
+
+
 
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
     # - task: PowerShell@2
