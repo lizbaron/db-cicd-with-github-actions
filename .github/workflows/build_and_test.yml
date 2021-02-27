@@ -392,6 +392,61 @@ jobs:
 
 
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
+  drop-aks-namespace:
+    name: monitoring
+    if: ${{ always() }}
+    runs-on: windows-latest
+    env:
+      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
+      NAMESPACE: ${{ needs.set-up-k8s-env.outputs.namespace }}
+    steps:
+      - name: decode az sp cred
+        id: cred-decode
+        shell: pwsh
+        run: |
+          $decodedCreds = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}"))
+          Write-Host ('::set-output name=az_sp_creds::'+$decodedCreds);
+      # documentation: https://github.com/azure/login#configure-azure-credentials
+      - name: login via az module
+        uses: azure/login@v1
+        with:
+          creds: ${{ steps.cred-decode.outputs.az_sp_creds }}
+          enable-AzPSSession: true 
+
+      # documentation: https://github.com/Azure/get-keyvault-secrets
+      - name: get azure secrets
+      # TODO: Consider deleting this task and getting these manually and setting them as secrets.
+        uses: Azure/get-keyvault-secrets@v1.0
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
+        with:
+          keyvault: ${{ env.AZ_SECRETS_MANAGER_NAME }}
+          secrets: 'azResourceGroupName, aksClusterName'  # comma separated list of secret keys that need to be fetched from the Key Vault 
+        id: azure-secrets
+
+      # Set the target AKS cluster.
+      - name: set aks context
+        uses: Azure/aks-set-context@v1
+        with:
+          creds: ${{ steps.cred-decode.outputs.az_sp_creds }}
+          cluster-name: ${{ steps.azure-secrets.outputs.aksClusterName }}
+          resource-group: ${{ steps.azure-secrets.outputs.azResourceGroupName }}
+
+      - name: monitorin step
+        shell: pwsh
+        timeout-minutes: 15
+        run: |
+          while($true)
+          {
+            kubectl describe nodes --all
+            Start-Sleep 15;
+          }
+
+
+
+
+
+# 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
     # - task: PowerShell@2
     #   name: TagArtifact
     #   inputs:
