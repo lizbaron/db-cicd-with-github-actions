@@ -394,10 +394,12 @@ jobs:
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   drop-aks-namespace:
     name: monitoring
+    needs: set-up-k8s-env
     if: ${{ always() }}
     runs-on: windows-latest
     env:
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
+      AZ_SECRETS_MANAGER_NAME: ${{ needs.set-up-k8s-env.outputs.azsecretsmanagername }}
       NAMESPACE: ${{ needs.set-up-k8s-env.outputs.namespace }}
     steps:
       - name: decode az sp cred
