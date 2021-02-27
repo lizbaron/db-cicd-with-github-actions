@@ -383,11 +383,11 @@ jobs:
           name: jUnitTests-${{ matrix.mssqlversion }}
           path: "${{ env.test_artifact_dir }}\\"
 
-      - name: delete the aks namespace
-        if: ${{ always() }}
-        shell: pwsh
-        run: |
-          kubectl delete namespaces ${{ steps.create-vars.outputs.namespace }}
+      # - name: delete the aks namespace
+      #   if: ${{ always() }}
+      #   shell: pwsh
+      #   run: |
+      #     kubectl delete namespaces ${{ steps.create-vars.outputs.namespace }}
 
 
 
