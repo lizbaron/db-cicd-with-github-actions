@@ -19,20 +19,14 @@ spec:
         app: matrix.mssqlversion-db
     spec:
       nodeSelector:
-        agentpool: akswin
+        agentpool: default
       containers:
       - name: matrix.mssqlversion-db
-        image: containerRegistryName/mssql:matrix.mssqlversion
+        image: mcr.microsoft.com/mssql/server:mssql:matrix.mssqlversion-latest
         ports:
           - containerPort: 80
             name: other 
             protocol: TCP
-          - containerPort: 8080
-            name: wiremock
-            protocol: TCP
           - containerPort: 1433
             name: mssql
             protocol: TCP
-      imagePullSecrets:
-      - name: acr-secret
-

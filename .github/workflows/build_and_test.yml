@@ -14,7 +14,7 @@ on:
         required: true
         default: 'db_cicd_project'
       msSqlVersions:
-        description: 'names of the k8s deployment files in JSON array format (e.g. ["mssql2008r2","mssql2012","mssql2014","mssql2016","mssql2017","mssql2019"])'
+        description: 'names of the k8s deployment files in JSON array format (e.g. ["mssql2008r2","mssql2012","mssql2014","mssql2016","mssql2017","mssql2019","linux2017","linux2019"])'
         required: true
         default: '["mssql2014","mssql2016","mssql2017","mssql2019"]'
       fail-fast:
@@ -213,7 +213,17 @@ jobs:
         shell: pwsh
         run: |
           $sqlPortArray = ('${{ needs.set-up-k8s-env.outputs.ports }}'|ConvertFrom-Json)  ;
-          $mssqlversion = '${{ matrix.mssqlversion }}';
+          $mssqlversion;
+          $osType;
+          if("linux-2017" -match "^(?<Os>[^\d-]*)-(?<Version>.+$)"){$matches;}else{1/0};##TODO:START-HERE
+          if ('${{ matrix.mssqlversion }}' -match "linux") {
+            $osType = "linux";
+            $mssqlversion = 
+          } else {
+            $osType = "windows";
+            $mssqlversion = '${{ matrix.mssqlversion }}';
+          };
+          # don't use this. It works but is longer and mostly unreadable: $osType = @{$true="linux";$false="windows"}['${{ matrix.mssqlversion }}' -match "linux"];
           $sqlPort = $sqlPortArray.${{ matrix.mssqlversion }}
           $aksNamespaceName = "$env:NAMESPACE-${{ matrix.mssqlversion }}"
 
@@ -230,6 +240,7 @@ jobs:
           Write-Host ('::set-output name=namespace::'+$aksNamespaceName);
           Write-Host ('::set-output name=sqlPort::'+$sqlPort);
           Write-Host ('::set-output name=sqlcmdPath::'+$sqlcmdPath);
+          Write-Host ('::set-output name=osType::'+$osType);
 
       - name: download tSQLtAndTests artifact
         uses: actions/download-artifact@v2
@@ -283,7 +294,7 @@ jobs:
         shell: pwsh
         run: |
 
-          $replaceMssqlversion = (Get-Content -Path ${{ github.workspace }}\cicd\aks\mssql.deployment.template.yml) -replace 'matrix.mssqlversion','${{ matrix.mssqlversion }}'
+          $replaceMssqlversion = (Get-Content -Path ${{ github.workspace }}\cicd\aks\mssql.deployment.${{ steps.create-vars.outputs.osType }}-template.yml) -replace 'matrix.mssqlversion','${{ matrix.mssqlversion }}'
           $replaceAcrURL = $replaceMssqlversion -replace 'containerRegistryName','${{ steps.azure-secrets.outputs.containerRegistryName }}.azurecr.io'
           $replaceAcrURL | Set-Content -Path ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
 
