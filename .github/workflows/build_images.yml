@@ -12,7 +12,7 @@ on:
       projectName:
         description: 'Project Name'     
         required: true
-        default: 'db_cicd_project'
+        default: 'test_20210224'
       machineName:
         description: 'Machine Name,  cannot be more than 15 characters long, be entirely numeric, or contain the following characters: ` ~ ! @ # $ % ^ & * ( ) = + _ [ ] { } \ | ; : . singlequote " , < > / ?.'     
         required: true
