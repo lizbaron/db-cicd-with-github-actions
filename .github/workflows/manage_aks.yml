@@ -3,16 +3,20 @@
 name: Manage AKS
 
 on:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    # Run every sunday at 6:20 AM
+    - cron:  '30 6 * * *'
   workflow_dispatch: 
     inputs:
       projectName:
         description: 'Project Name'     
         required: true
-        default: 'db_cicd_project'
+        default: 'test_20210224'
       aks_action:
         description: 'AKS Action: start or stop'     
         required: true
-        default: 'start'
+        default: 'stop'
 
 jobs:
 
