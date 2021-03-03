@@ -18,9 +18,9 @@ on:
         required: true
         default: 'w2019c1'
       msSqlVersions:
-        description: 'names of the k8s deployment files in JSON array format (e.g. ["mssql2008r2","mssql2012","mssql2014","mssql2016","mssql2017","mssql2019"])'
+        description: 'names of the k8s deployment files in JSON array format (e.g. ["windows-2008r2","windows-2012","windows-2014","windows-2016","windows-2017","windows-2019"])'
         required: true
-        default: '["mssql2014","mssql2016","mssql2017","mssql2019"]'
+        default: '["windows-2014","windows-2016","windows-2017","windows-2019"]'
       debugVM:
         description: 'set to "true" to retain the VM for debugging purposes'
         required: false
@@ -68,7 +68,7 @@ jobs:
           $containerRegistryURL = "crn" + $projectNameHash + ".azurecr.io";
           $repoURL = "${{ github.SERVER_URL }}/${{ github.REPOSITORY }}.git";
           $commitId = "${{ github.SHA }}" ;
-          $msSqlVersionForMatrix = '{"mssqlversion":'+$env:MS_SQL_VERSIONS+'}';
+          $msSqlVersionForMatrix = '{"windows-version":'+$env:MS_SQL_VERSIONS+'}';
 
 
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
@@ -243,7 +243,7 @@ jobs:
             # Documented here: https://docs.microsoft.com/en-us/azure/container-registry/container-registry-delete#delete-all-untagged-images
 
             $registry = "$env:AZ_CONTAINER_REGISTRY_URL";
-            $repository = "mssql";
+            $repository = "windows-";
 
             az acr repository show-manifests --name $registry --repository $repository --query "[?tags[0]==null].digest" -o tsv | %{ az acr repository delete --name $registry --image $repository@$_ --yes }
 
