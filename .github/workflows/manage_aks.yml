@@ -100,5 +100,6 @@ jobs:
       - name: unknown action error
         shell: pwsh
         run: |
-            Write-Host ("::error::✨   ✨   ✨ stop and start are the only options! ✨   ✨   ✨");
+            Write-Host ("::error::✨   ✨   ✨ `"${{ github.event.inputs.aks_action }}`" is not a valid option. ✨   ✨   ✨");
+            Write-Host ("::error::✨   ✨   ✨ `"stop`" and `"start`" are the only options! ✨   ✨   ✨");
             exit 1; 
