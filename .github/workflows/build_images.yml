@@ -243,7 +243,7 @@ jobs:
             # Documented here: https://docs.microsoft.com/en-us/azure/container-registry/container-registry-delete#delete-all-untagged-images
 
             $registry = "$env:AZ_CONTAINER_REGISTRY_URL";
-            $repository = "windows-";
+            $repository = "windows-mssql"; # https://github.com/distribution/distribution/blob/main/docs/spec/api.md#overview, must adhere to: [a-z0-9]+(?:[._-][a-z0-9]+)*
 
             az acr repository show-manifests --name $registry --repository $repository --query "[?tags[0]==null].digest" -o tsv | %{ az acr repository delete --name $registry --image $repository@$_ --yes }
 
