@@ -30,6 +30,7 @@ jobs:
 
     env:
       GITHUB_EVENT_NAME: ${{ github.event_name }}
+      GITHUB_EVENT_ACTION: ${{ github.event.action }}
       WORKFLOW_PROJECT_NAME: ${{ github.event.inputs.projectName }}
       WORKFLOW_ACTION: ${{ github.event.inputs.aks_action }}
       DEFAULT_PROJECT_NAME: test_20210224
@@ -54,7 +55,12 @@ jobs:
           $action;
           if ($env:GITHUB_EVENT_NAME -ne "workflow_dispatch") {
             $projectName = "$env:DEFAULT_PROJECT_NAME";
-            $action = "$env:DEFAULT_ACTION";
+            if($env:GITHUB_EVENT_NAME -eq "repository_dispatch"){
+              $env:GITHUB_EVENT_ACTION -match "aks-(?<Command>.*)"
+              $action = $matches.Command;
+            } else {
+              $action = "$env:DEFAULT_ACTION";
+            }
           } else {
             $projectName = "$env:WORKFLOW_PROJECT_NAME";
             $action = "$env:WORKFLOW_ACTION";
