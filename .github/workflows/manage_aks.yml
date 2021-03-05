@@ -29,7 +29,6 @@ jobs:
     if: ${{ github.event.inputs.aks_action == 'start' || github.event.inputs.aks_action == 'stop' || github.event_name != 'workflow_dispatch'}}
 
     env:
-      AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
       GITHUB_EVENT_NAME: ${{ github.event_name }}
       WORKFLOW_PROJECT_NAME: ${{ github.event.inputs.projectName }}
       WORKFLOW_ACTION: ${{ github.event.inputs.aks_action }}
@@ -73,10 +72,13 @@ jobs:
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           
           Write-Host ('::set-output name=azsecretsmanagername::'+$azSecretsManagerName);
+          Write-Host ('::set-output name=projectName::'+$projectName);
           Write-Host ('::set-output name=action::'+$action);
            
       - name: decode az sp cred
         id: cred-decode
+        env:
+          AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', steps.create-vars.outputs.projectName)] }}
         shell: pwsh
         run: |
           $decodedCreds = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String("${{ env.AZ_SERVICE_PRINCIPAL_CREDENTIALS}}"))
