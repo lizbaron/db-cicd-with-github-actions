@@ -117,7 +117,8 @@ jobs:
     needs: [aks-action]
     runs-on: windows-latest
 #    if: ${{ needs.aks-action.result == 'skipped' }}
-    if: always()
+    if: ${{ always() && needs.aks-action.result == 'skipped' }}
+#    if: always()
 
     steps:
       - name: Dump GitHub context
