@@ -60,8 +60,8 @@ jobs:
             $projectName = "$env:DEFAULT_PROJECT_NAME";
             $action = "$env:DEFAULT_ACTION";
           } else {
-            $projectName = "$env:PROJECT_NAME";
-            $action = "$env:ACTION";
+            $projectName = "$env:WORKFLOW_PROJECT_NAME";
+            $action = "$env:WORKFLOW_ACTION";
           }
 
           $projectNameHash = (Get-MD5HashOfString($env:PROJECT_NAME)).Substring(0,10);
