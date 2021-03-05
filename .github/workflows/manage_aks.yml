@@ -116,7 +116,7 @@ jobs:
     name: Unknown Action for AKS
     needs: [aks-action]
     runs-on: windows-latest
-    if: always()
+    if: ${{ needs.aks-action.results == 'skipped' }}
 
     steps:
       - name: Dump GitHub context
