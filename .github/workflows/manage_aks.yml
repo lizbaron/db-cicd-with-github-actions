@@ -100,7 +100,9 @@ jobs:
       - name: unknown action error
         shell: pwsh
         run: |
-            ConvertTo-Json(${{ github.event.inputs}});
+            ${{ github.event.inputs}} | Get-Member
+
+            ConvertTo-Json(${{ github.event.inputs.aks_action }});
             Write-Host ("::error::✨   ✨   ✨ `"${{ github.event.inputs.default.aks_action }}`" is not a valid option. ✨   ✨   ✨");
             Write-Host ("::error::✨   ✨   ✨ `"${{ github.event.inputs.aks_action.default }}`" is not a valid option. ✨   ✨   ✨");
             Write-Host ("::error::✨   ✨   ✨ `"${{ github.event.inputs.aks_action }}`" is not a valid option. ✨   ✨   ✨");
