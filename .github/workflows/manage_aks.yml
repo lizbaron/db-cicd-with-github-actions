@@ -20,15 +20,24 @@ on:
 
 jobs:
 
-# 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
+# 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  
+  
+
+
+
+# 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  
   aks-action:
     name: Apply Action to AKS
     runs-on: windows-latest
-    if: ${{ github.event.inputs.aks_action == 'start' || github.event.inputs.aks_action == 'stop'}}
+    if: ${{ github.event.inputs.aks_action == 'start' || github.event.inputs.aks_action == 'stop' || github.event_name != 'workflow_dispatch'}}
 
     env:
-      PROJECT_NAME: ${{ github.event.inputs.projectName }}
       AZ_SERVICE_PRINCIPAL_CREDENTIALS: ${{ secrets[format('AZ_SP_CRED_{0}', github.event.inputs.projectName)] }}
+      GITHUB_EVENT_NAME: ${{ github.event_name }}
+      WORKFLOW_PROJECT_NAME: ${{ github.event.inputs.projectName }}
+      WORKFLOW_ACTION: ${{ github.event.inputs.aks_action }}
+      DEFAULT_PROJECT_NAME: test_20210224
+      DEFAULT_ACTION: stop
       
     steps:
       - name: create variables
@@ -45,17 +54,29 @@ jobs:
               return [String]$hashedString;
           }
 
+          $projectName;
+          $action;
+          if ($env:GITHUB_EVENT_NAME -ne "workflow_dispatch") {
+            $projectName = "$env:DEFAULT_PROJECT_NAME";
+            $action = "$env:DEFAULT_ACTION";
+          } else {
+            $projectName = "$env:PROJECT_NAME";
+            $action = "$env:ACTION";
+          }
+
           $projectNameHash = (Get-MD5HashOfString($env:PROJECT_NAME)).Substring(0,10);
           $azSecretsManagerName = "sm-" + $projectNameHash;
 
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          Write-Host ("projectName value: {0}" -f $env:PROJECT_NAME);
+          Write-Host ("projectName value: {0}" -f $projectName);
+          Write-Host ("action value: {0}" -f $action);
           Write-Host ("azSecretsManagerName: {0}" -f "$azSecretsManagerName"); 
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           
           Write-Host ('::set-output name=azsecretsmanagername::'+$azSecretsManagerName);
+          Write-Host ('::set-output name=action::'+$action);
            
       - name: decode az sp cred
         id: cred-decode
@@ -88,39 +109,41 @@ jobs:
           azpsversion: 'latest'
           errorActionPreference: 'continue'
           inlineScript: |
-            az aks ${{ github.event.inputs.aks_action }} --name ${{ steps.azure-secrets.outputs.aksClusterName }} --resource-group ${{ steps.azure-secrets.outputs.azResourceGroupName }}
+            az aks ${{ steps.create-vars.outputs.action }} --name ${{ steps.azure-secrets.outputs.aksClusterName }} --resource-group ${{ steps.azure-secrets.outputs.azResourceGroupName }}
 
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   unknown-aks-action:
     name: Unknown Action for AKS
+    needs: [aks-action]
     runs-on: windows-latest
-    if: ${{ github.event.inputs.aks_action != 'stop' && github.event.inputs.aks_action != 'start'}}
+    if: always()
 
     steps:
       - name: Dump GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJSON(github) }}
         run: echo "$GITHUB_CONTEXT"
+
       - name: Dump job context
         env:
           JOB_CONTEXT: ${{ toJSON(job) }}
         run: echo "$JOB_CONTEXT"
+
       - name: Dump steps context
         env:
           STEPS_CONTEXT: ${{ toJSON(steps) }}
         run: echo "$STEPS_CONTEXT"
-      - name: Dump runner context
+
+      - name: Dump needs context
         env:
-          RUNNER_CONTEXT: ${{ toJSON(runner) }}
-        run: echo "$RUNNER_CONTEXT"
-      - name: Dump strategy context
+          NEEDS_CONTEXT: ${{ toJSON(needs) }}
+        run: echo "$NEEDS_CONTEXT"
+
+      - name: Dump needs context
         env:
-          STRATEGY_CONTEXT: ${{ toJSON(strategy) }}
-        run: echo "$STRATEGY_CONTEXT"
-      - name: Dump matrix context
-        env:
-          MATRIX_CONTEXT: ${{ toJSON(matrix) }}
-        run: echo "$MATRIX_CONTEXT"
+          NEEDS_CONTEXT: ${{ toJSON(needs.aks-action) }}
+        run: echo "$NEEDS_CONTEXT"
+
       - name: unknown action error
         shell: pwsh
         run: |
