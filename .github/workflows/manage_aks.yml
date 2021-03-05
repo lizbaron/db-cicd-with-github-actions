@@ -116,7 +116,8 @@ jobs:
     name: Unknown Action for AKS
     needs: [aks-action]
     runs-on: windows-latest
-    if: ${{ needs.aks-action.result == 'skipped' }}
+#    if: ${{ needs.aks-action.result == 'skipped' }}
+    if: always()
 
     steps:
       - name: Dump GitHub context
@@ -147,6 +148,6 @@ jobs:
       - name: unknown action error
         shell: pwsh
         run: |
-            Write-Host ("::error::✨   ✨   ✨ `"${{ github.event_name }}`" is not a valid option. ✨   ✨   ✨");
+            Write-Host ("::error::✨   ✨   ✨ `"${{ needs.aks-action.result }}`" is not a valid option. ✨   ✨   ✨");
             Write-Host ("::error::✨   ✨   ✨ `"stop`" and `"start`" are the only options! ✨   ✨   ✨");
             exit 1; 
