@@ -6,7 +6,7 @@ on:
   schedule:
     # * is a special character in YAML so you have to quote this string
     # Run every sunday at 6:20 AM
-    - cron:  '30 6 * * *'
+    - cron:  '10 * * * *'
   workflow_dispatch: 
     inputs:
       projectName:
