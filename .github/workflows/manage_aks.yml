@@ -88,7 +88,6 @@ jobs:
        # documentation: https://github.com/azure/login#configure-azure-credentials
       - name: login via az module
         uses: azure/login@v1
-        if: ${{ false }}
         with:
           creds: ${{ steps.cred-decode.outputs.az_sp_creds }}
           enable-AzPSSession: true 
@@ -96,7 +95,6 @@ jobs:
       # documentation: https://github.com/Azure/get-keyvault-secrets
       - name: get azure secrets
         id: azure-secrets
-        if: ${{ false }}
         uses: Azure/get-keyvault-secrets@v1.0
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true' # Note that this task can be replaced with a similar pattern as setting the namespace to the env variables (above), but is also not secure.
@@ -106,7 +104,6 @@ jobs:
 
       - name: aks action
         id: aks-action
-        if: ${{ false }}
         uses: azure/powershell@v1
         with:
           azpsversion: 'latest'
@@ -119,9 +116,7 @@ jobs:
     name: Unknown Action for AKS
     needs: [aks-action]
     runs-on: windows-latest
-#    if: ${{ needs.aks-action.result == 'skipped' }}
-    if: ${{ always() && needs.aks-action.result == 'skipped' }}
-#    if: always()
+    if: ${{ always() && needs.aks-action.result == 'skipped' }} #MDPOMG, how to run a job if the previous one is skipped, but not if it isn't.
 
     steps:
       - name: Dump GitHub context
