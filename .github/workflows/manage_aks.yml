@@ -100,7 +100,7 @@ jobs:
       - name: unknown action error
         shell: pwsh
         run: |
-            Write-Host("${{ toJSON(github) }}");
+            Write-Host("ConvertFrom-Json(${{ toJSON(github) }})");
             Write-Host ("::error::✨   ✨   ✨ `"${{ github.event_name }}`" is not a valid option. ✨   ✨   ✨");
             Write-Host ("::error::✨   ✨   ✨ `"stop`" and `"start`" are the only options! ✨   ✨   ✨");
             exit 1; 
