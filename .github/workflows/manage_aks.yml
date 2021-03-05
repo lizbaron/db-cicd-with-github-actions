@@ -64,7 +64,7 @@ jobs:
             $action = "$env:WORKFLOW_ACTION";
           }
 
-          $projectNameHash = (Get-MD5HashOfString($env:PROJECT_NAME)).Substring(0,10);
+          $projectNameHash = (Get-MD5HashOfString($projectName)).Substring(0,10);
           $azSecretsManagerName = "sm-" + $projectNameHash;
 
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
