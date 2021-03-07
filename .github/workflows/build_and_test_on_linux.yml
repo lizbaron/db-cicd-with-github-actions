@@ -158,8 +158,8 @@ jobs:
           ~/.spawnctl/bin/spawnctl create data-image -f $dataImageYmlPath
 
           echo "Creating 'tSQLtOnLinux' Spawn data container from image '$dataImangeName'";
-          $containerName=$(~/.spawnctl/bin/spawnctl create data-container --image $dataImageName --lifetime 10m -q)
-          $containerJSON=$(~/.spawnctl/bin/spawnctl get data-container $containerName -o json)
+          $containerName= ~/.spawnctl/bin/spawnctl create data-container --image $dataImageName --lifetime 10m -q
+          $containerJSON= ~/.spawnctl/bin/spawnctl get data-container $containerName -o json
           $containerInfo = ConvertFrom-JSON -inputObject $containerJSON;
           $containerFQDN=$containerInfo.host+", "+$containerInfo.port;
           $containerUser=$containerInfo.user;
