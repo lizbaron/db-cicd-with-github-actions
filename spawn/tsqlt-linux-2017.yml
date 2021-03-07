@@ -1,0 +1,4 @@
+sourceType: empty
+name: tsqltlinux2017
+engine: mssql
+version: 2017

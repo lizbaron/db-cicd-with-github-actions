@@ -1,0 +1,305 @@
+# Builds and tests a database project (in this case tSQLt) 
+# 
+# AZURE: Before this workflow will run successfully you must do the following
+# 1. Run the github action workflow, "cicd_environment_setup.yml"
+
+name: Build and Test tSQLt
+
+# Controls when the action will run. 
+on:
+  workflow_dispatch: 
+    inputs:
+      msSqlVersions:
+        description: 'names of the spawn data-containers in JSON array format (e.g. ["linux2017"])'
+        required: true
+        default: '["linux2017"]'
+      fail-fast:
+        description: 'set to "false" to allow all matrix jobs to run, even if some fail'
+        required: true
+        default: 'true'
+
+jobs:
+# 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
+  build-tSQLt:
+    name: build tSQLt
+    # if: ${{ false }}
+
+    runs-on: windows-latest
+
+    env:
+      PFX_PATH: ${{ github.workspace }}\tSQLt\Build\tSQLtOfficialSigningKey.pfx
+      PFX_PASSWORD: ${{ secrets.PFX_PASSWORD }}
+      ARTIFACT_DIR: ${{ github.workspace }}\artifacts
+      
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it. 
+      # But this is misleading, because this variable is only really helpful as ${{ github.workspace }}
+      - name: Checkout self
+        uses: actions/checkout@v2
+        with:
+          path: cicd
+
+      - name: Checkout tSQLt
+        uses: actions/checkout@v2
+        with:
+          repository: tSQLt-org/tSQLt
+#          ref: login-timeout-to-60 # OH BY THE WAY, #MDP --> order actually matters. If the ref does not appear here, checkout ignores it. No error. Very helpful.
+          path: tSQLt
+          token: ${{ secrets.my_pat }}
+          # Why do we need a token here? It's a public repository.
+
+      # documentation: This is just what you need to do...
+      - name: create and install unofficial pfx file for signing dlls
+        shell: pwsh
+        run: |
+          $cert = New-SelfSignedCertificate -FriendlyName "tSQLt_testKey" -Type CodeSigningCert -Subject "CN=localhost" -KeyAlgorithm RSA -HashAlgorithm SHA1 -KeyLength 2048 -SmimeCapabilities -CertStoreLocation "cert:/LocalMachine" -Provider "Microsoft Strong Cryptographic Provider"
+          $pwd = ConvertTo-SecureString -String "$env:PFX_PASSWORD" -Force -AsPlainText
+          $pfxFile = Export-PfxCertificate -cert ("Cert:\LocalMachine\My\" + $cert.thumbprint) -FilePath $env:PFX_PATH -Password $pwd
+          &"${{ github.workspace }}\tSQLt\Build\SnInstallPfx" "$env:PFX_PATH" "$env:PFX_PASSWORD" tSQLt_OfficialSigningKey
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.2
+
+      - name: build tsqltCLR
+        shell: pwsh
+        run: |
+          cd "${{ github.workspace }}\tSQLt\tSQLtCLR"
+          msbuild .\tSQLtCLR.sln -m -p:Configuration=CruiseControl
+
+      - name: copy files to artifact staging and compress to tSQLtCLR.zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "$env:ARTIFACT_DIR\tSQLtCLR"
+          New-Item -ItemType Directory -Path "${{ github.workspace }}\tSQLt\Build\output"
+          Get-Item -Path "${{ github.workspace }}\tSQLt\tSQLtCLR\*\bin\*\*" -Filter *.dll | Copy-Item -Destination "$env:ARTIFACT_DIR\tSQLtCLR" -Container:$false
+          $compress = @{
+            Path = "$env:ARTIFACT_DIR\tSQLtCLR\*.dll"
+            CompressionLevel = "Fastest"
+            DestinationPath = "${{ github.workspace }}\tSQLt\Build\output\tSQLtCLR.zip"
+            }
+          Compress-Archive @compress
+ 
+      - name: ant Build/tSQLt.build.xml
+        run: ant -buildfile "${{ github.workspace }}\tSQLt\Build\tSQLt.build.xml" all
+
+      - name: copy tSQLt artifacts to ${{ env.artifact_dir }}
+        shell: pwsh
+        run: |
+          Remove-Item "$env:ARTIFACT_DIR" -Recurse
+          New-Item -ItemType Directory -Path "$env:ARTIFACT_DIR"
+          $basePath = "${{ github.workspace }}\tSQLt\Build\output\";
+          $artifactFiles = (@("Version.txt","tSQLt.zip","tSQLt.tests.zip","tSQLtSnippets(SQLPrompt).zip")| ForEach-Object { $basePath + $_ });
+          $artifactFiles | Copy-Item -Verbose -Destination "$env:ARTIFACT_DIR";
+
+      - name: Archive production artifact
+        uses: actions/upload-artifact@v2
+        with:
+          if-no-files-found: error
+          name: tSQLtAndTests
+          path: "${{ env.artifact_dir }}\\"
+
+# 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
+  test-tSQLt:
+    name: test build artifacts
+    needs: [build-tSQLt,set-up-k8s-env]
+
+    # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
+    # Note: [https://kubernetes.io/docs/tasks/tools/install-kubectl/#before-you-begin]
+    #     You must use a kubectl version that is within one minor version difference of your cluster. For example, a v1.2 client should work with v1.1, v1.2, and v1.3 master. Using the latest version of kubectl helps avoid unforeseen issues.
+    runs-on: windows-latest
+
+    env:
+      TEST_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\TestResults
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+
+      - name: Checkout self
+        uses: actions/checkout@v2
+        with:
+          path: cicd
+
+      - name: Checkout tSQLt
+        uses: actions/checkout@v2
+        with:
+          repository: tSQLt-org/tSQLt
+          path: tSQLt
+          token: ${{ secrets.my_pat }}
+
+      - name: load namespace variables into env
+        id: create-vars
+        shell: pwsh
+        run: |
+          $sqlcmdPath = (Get-Command sqlcmd).Path.TrimEnd("\\SQLCMD.EXE");
+          Write-Host ('::set-output name=sqlcmdPath::'+$sqlcmdPath);
+
+      - name: download tSQLtAndTests artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: tSQLtAndTests
+          path: "${{ github.workspace }}\\tSQLt\\Build_Artifact"
+
+      - name: Install spawnctl
+        run: |
+          echo "Downloading and installing spawnctl..."
+          curl -sL https://run.spawn.cc/install | sh
+          export PATH=$PATH:$HOME/.spawnctl/bin
+
+      - name: Run database migrations
+        shell: pwsh
+        run: |
+          $dataImageName = 'tsqlt-linux-2017';
+          $dataImageYmlPath = "~/cicd/spawn/$dataImageName.yml"
+
+          spawnctl create data-image -f $dataImageYmlPath
+
+          echo "Creating 'tSQLtOnLinux' Spawn data container from image '$dataImangeName'";
+          $containerName=$(spawnctl create data-container --image $dataImageName --lifetime 10m -q)
+          $containerJSON=$(spawnctl get data-container $containerName -o json)
+          $containerInfo = ConvertFrom-JSON -inputObject $containerJSON;
+          $containerFQDN=$containerInfo.host+", "+$containerInfo.port;
+          $containerUser=$containerInfo.user;
+          $containerPassword=$containerInfo.password;
+          echo "Successfully created Spawn data container '$containerName'"
+
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          Write-Host Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$containerFQDN" -Username "$containerUser" -Password "$containerPassword" -As DataSet
+          $DS = Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$containerFQDN" -Username "$containerUser" -Password "$containerPassword" -As DataSet
+
+          $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
+          Write-Host "";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+
+        env:
+          SPAWNCTL_ACCESS_TOKEN: ${{ secrets.SPAWNCTL_ACCESS_TOKEN }} 
+
+      # - name: apply deployment to aks
+      #   shell: pwsh
+      #   run: |
+
+      #     $replaceMssqlversion = (Get-Content -Path ${{ github.workspace }}\cicd\aks\mssql.deployment.${{ steps.create-vars.outputs.osType }}-template.yml) -replace 'matrix.mssqlversion','${{ matrix.mssqlversion }}'
+      #     $replaceAcrURL = $replaceMssqlversion -replace 'containerRegistryName','${{ steps.azure-secrets.outputs.containerRegistryName }}.azurecr.io'
+      #     $replaceAcrURL | Set-Content -Path ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
+
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     Get-Content -Path .\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+
+      #     kubectl apply -f ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
+      #     kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=${{ steps.create-vars.outputs.sqlPort }} --target-port=1433
+      #     kubectl wait pod --for=condition=Ready --all --timeout 600s # Experimental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
+          
+      # - name: check service
+      #   shell: pwsh
+      #   timeout-minutes: 3
+      #   run: |
+      #     $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
+
+      #     while ([String]::IsNullOrWhiteSpace($ipAddress))
+      #     {
+      #       Start-Sleep -Seconds 10
+      #       $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
+      #     }
+
+      #     # add environment variables
+      #     #---------------------------------------------------------------------------------------------------#
+      #     # IMPORTANT (and, you've got to be kidding me):                                                     #
+      #     # The space between the comma and the sqlPort is absolutely required to make the ANT Task work.     #
+      #     #---------------------------------------------------------------------------------------------------#
+      #     $fqdnAndPort = $ipAddress + ", " + ${{ steps.create-vars.outputs.sqlPort }};
+      #     #-----------------------------^---------------------------------------------------------------------#
+      #     #-----------------------------^---------------------------------------------------------------------#
+
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     Write-Host "";
+      #     Write-Host ("fqdnAndPort value: {0}" -f $fqdnAndPort); 
+      #     Write-Host "";
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     echo "fqdnAndPort=$fqdnAndPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      # - name: check sql server instance and update sa password
+      #   shell: pwsh
+      #   run: |
+      #     kubectl exec service/${{ matrix.mssqlversion }}-service -- powershell.exe -c 'Get-Service MSSQL*'
+      #     Write-Host "";
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     Write-Host "";
+      #     Write-Host "SQL Server Info";
+      #     kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -l 60 -Q "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;"
+      #     Write-Host "";
+      #     Write-Host "Update sa password";
+      #     $sqlStatement = "ALTER LOGIN sa with password='" + $env:SA_PASSWORD + "',CHECK_POLICY=OFF,CHECK_EXPIRATION=OFF; ALTER LOGIN sa ENABLE;";
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     Write-Host "";
+      #     Write-Output $sqlStatement
+      #     Write-Host "";
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -l 60 -Q "$sqlStatement"
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+
+      # - name: print sql version info
+      #   shell: pwsh
+      #   run: |
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     Write-Host "";
+      #     Write-Host Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
+      #     $DS = Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
+
+      #     $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
+      #     Write-Host "";
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+
+      # # @SM --> TODO: jUnit results
+      # - name: ant Build/tSQLt.validatebuild.xml
+      #   working-directory: ${{ github.workspace }}\tSQLt\Build
+      #   run: ant -buildfile tSQLt.validatebuild.xml all -D"db.server"="$env:fqdnAndPort" -D"db.name"=tSQLt_dev -D"db.login"="-U sa -P $env:SA_PASSWORD -l 180 -t 360" -D"sqlcmd.path"="${{ steps.create-vars.outputs.sqlcmdPath }}"
+
+      # - name: create junit artifact
+      #   shell: pwsh
+      #   run: |
+      #     $basePath = "${{ github.workspace }}";
+      #     $basePath;
+
+      #     $ArtifactPath = "$env:TEST_ARTIFACT_DIR\";
+      #     $ArtifactPath;
+
+      #     New-Item -Path $ArtifactPath -ItemType directory -Force
+
+      #     (Get-ChildItem $basePath -recurse -include "*TestResults*.xml").FullName; 
+
+      #     (Get-ChildItem $basePath -recurse -include "*TestResults*.xml").FullName|Copy-Item -Destination $ArtifactPath -recurse -PassThru
+      #     Set-Content -Path ($ArtifactPath+"CommitId.txt") -Value "${{ github.sha }}"
+
+      # - name: archive junit test artifact
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     if-no-files-found: error
+      #     name: jUnitTests-${{ matrix.mssqlversion }}
+      #     path: "${{ env.test_artifact_dir }}\\"
+
+      # - name: delete the aks namespace
+      #   if: ${{ always() }}
+      #   shell: pwsh
+      #   run: |
+      #     kubectl delete namespaces ${{ steps.create-vars.outputs.namespace }}
+
+
+
+# # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
+#   drop-data-container:
+#     name: drop the data container
+#     needs: test-tSQLt
+#     if: ${{ always() }}
+#     runs-on: ubuntu-latest
+#     env:
+#     steps:
+#       - name: decode az sp cred
+#         id: cred-decode
+#         shell: pwsh
+#         run: |
+#           Write-Host ('#TODO');
+#       # documentation: https://github.com/azure/login#configure-azure-credentials
+
+
+
