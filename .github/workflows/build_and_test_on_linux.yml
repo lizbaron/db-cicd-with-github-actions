@@ -123,25 +123,25 @@ jobs:
         with:
           path: cicd
 
-      - name: Checkout tSQLt
-        uses: actions/checkout@v2
-        with:
-          repository: tSQLt-org/tSQLt
-          path: tSQLt
-          token: ${{ secrets.my_pat }}
+      # - name: Checkout tSQLt
+      #   uses: actions/checkout@v2
+      #   with:
+      #     repository: tSQLt-org/tSQLt
+      #     path: tSQLt
+      #     token: ${{ secrets.my_pat }}
 
-      - name: load namespace variables into env
-        id: create-vars
-        shell: pwsh
-        run: |
-          $sqlcmdPath = (Get-Command sqlcmd).Path.TrimEnd("\\SQLCMD.EXE");
-          Write-Host ('::set-output name=sqlcmdPath::'+$sqlcmdPath);
+      # - name: load namespace variables into env
+      #   id: create-vars
+      #   shell: pwsh
+      #   run: |
+      #     $sqlcmdPath = (Get-Command sqlcmd).Path.TrimEnd("\\SQLCMD.EXE");
+      #     Write-Host ('::set-output name=sqlcmdPath::'+$sqlcmdPath);
 
-      - name: download tSQLtAndTests artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: tSQLtAndTests
-          path: "${{ github.workspace }}\\tSQLt\\Build_Artifact"
+      # - name: download tSQLtAndTests artifact
+      #   uses: actions/download-artifact@v2
+      #   with:
+      #     name: tSQLtAndTests
+      #     path: "${{ github.workspace }}\\tSQLt\\Build_Artifact"
 
       - name: Install spawnctl
         run: |
