@@ -25,7 +25,7 @@ jobs:
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   build-tSQLt:
     name: build tSQLt
-    # if: ${{ false }}
+    if: ${{ false }}
 
     runs-on: windows-latest
 
@@ -105,11 +105,12 @@ jobs:
   test-tSQLt:
     name: test build artifacts
     needs: [build-tSQLt]
+    if: ${{ always() }}
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
     # Note: [https://kubernetes.io/docs/tasks/tools/install-kubectl/#before-you-begin]
     #     You must use a kubectl version that is within one minor version difference of your cluster. For example, a v1.2 client should work with v1.1, v1.2, and v1.3 master. Using the latest version of kubectl helps avoid unforeseen issues.
-    runs-on: windows-latest
+    #runs-on: windows-latest
 
     env:
       TEST_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\TestResults
