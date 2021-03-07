@@ -3,10 +3,13 @@
 # AZURE: Before this workflow will run successfully you must do the following
 # 1. Run the github action workflow, "cicd_environment_setup.yml"
 
-name: Build and Test tSQLt
+name: Build and Test tSQLt on Linux
 
 # Controls when the action will run. 
 on:
+  push:
+    branches:
+      - image-pipeline
   workflow_dispatch: 
     inputs:
       msSqlVersions:
