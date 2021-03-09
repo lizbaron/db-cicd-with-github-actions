@@ -184,8 +184,8 @@ jobs:
         run: |
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          Write-Host Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "${{ steps.create-container.outputs.containerUser }}" -Password "${{ steps.create-container.outputs.containerPassword }}" -As DataSet
-          $DS = Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "${{ steps.create-container.outputs.containerUser }}" -Password "${{ steps.create-container.outputs.containerPassword }}" -As DataSet
+          Write-Host Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "${{ steps.create-container.outputs.containerFQDN }}" -Username "${{ steps.create-container.outputs.containerUser }}" -Password "${{ steps.create-container.outputs.containerPassword }}" -As DataSet
+          Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "${{ steps.create-container.outputs.containerFQDN }}" -Username "${{ steps.create-container.outputs.containerUser }}" -Password "${{ steps.create-container.outputs.containerPassword }}" -As DataSet
 
           $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
           Write-Host "";
