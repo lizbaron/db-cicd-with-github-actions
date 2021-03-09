@@ -158,7 +158,7 @@ jobs:
           $dataImageYmlPath = "./cicd/spawn/$dataImageName.yml"
           Get-Content -Path $dataImageYmlPath;
 
-          & "${{ github.workspace }}\spawnctl.exe" create data-image -f $dataImageYmlPath;
+          & "${{ github.workspace }}\spawnctl.exe" create data-image -f $dataImageYmlPath -q;
 
           echo "Creating 'tSQLtOnLinux' Spawn data container from image '$dataImageName'";
           $containerName= & "${{ github.workspace }}\spawnctl.exe" create data-container --image $dataImageName --lifetime 10m -q
