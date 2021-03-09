@@ -152,6 +152,9 @@ jobs:
       - name: Run database migrations
         shell: pwsh
         run: |
+          Set-Location ~
+          Get-ChildItem -r
+
           $DebugPreference = 'Continue';$VerbosePreference = 'Continue';
           Set-PSDebug -Trace 2;
 
