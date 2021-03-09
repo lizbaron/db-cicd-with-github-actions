@@ -147,19 +147,12 @@ jobs:
         shell: pwsh
         run: |
           echo "Downloading and installing spawnctl..."
-          $DebugPreference = 'Continue';$VerbosePreference = 'Continue';
-          Set-PSDebug -Trace 2;
-          date; 
           Invoke-WebRequest -Uri "https://run.spawn.cc/spawnctl.exe" -UseBasicParsing -OutFile "${{ github.workspace }}\spawnctl.exe"
-          date; 
           & "${{ github.workspace }}\spawnctl.exe" version
 
       - name: Run database migrations
         shell: pwsh
-        if: ${{ false }}
         run: |
-          Get-ChildItem -r
-
           $DebugPreference = 'Continue';$VerbosePreference = 'Continue';
           Set-PSDebug -Trace 2;
 
@@ -167,12 +160,12 @@ jobs:
           $dataImageYmlPath = "./cicd/spawn/$dataImageName.yml"
           Get-Content -Path $dataImageYmlPath;
 
-          ($t = if($true){~/.spawnctl/bin/spawnctl create data-image -f $dataImageYmlPath -l 'debug';}) *>&1
+          ($t = if($true){& "${{ github.workspace }}\spawnctl.exe" create data-image -f $dataImageYmlPath -l 'debug';}) *>&1
           $t;
 
           echo "Creating 'tSQLtOnLinux' Spawn data container from image '$dataImageName'";
-          $containerName= ~/.spawnctl/bin/spawnctl create data-container --image $dataImageName --lifetime 10m -q -l debug
-          $containerJSON= ~/.spawnctl/bin/spawnctl get data-container $containerName -o json -l debug
+          $containerName= & "${{ github.workspace }}\spawnctl.exe" create data-container --image $dataImageName --lifetime 10m -q -l debug
+          $containerJSON= & "${{ github.workspace }}\spawnctl.exe" get data-container $containerName -o json -l debug
           $containerInfo = ConvertFrom-JSON -inputObject $containerJSON;
           $containerFQDN=$containerInfo.host+", "+$containerInfo.port;
           $containerUser=$containerInfo.user;
