@@ -150,7 +150,8 @@ jobs:
           Invoke-WebRequest -Uri "https://run.spawn.cc/spawnctl.exe" -UseBasicParsing -OutFile "${{ github.workspace }}\spawnctl.exe"
           & "${{ github.workspace }}\spawnctl.exe" version
 
-      - name: Create Container and Run Tests
+      - name: Create Container
+        id: create-container
         shell: pwsh
         run: |
 
@@ -170,93 +171,25 @@ jobs:
           $containerPassword=$containerInfo.password;
           echo "Successfully created Spawn data container '$containerName'"
 
+          Write-Host ('::set-output name=containerFQDN::'+$containerFQDN);
+          Write-Host ('::set-output name=containerUser::'+$containerUser);
+          Write-Host ('::set-output name=containerPassword::'+$containerPassword);
+
+        env:
+          SPAWNCTL_ACCESS_TOKEN: ${{ secrets.SPAWNCTL_ACCESS_TOKEN }} 
+        
+
+      - name: print sql version info
+        shell: pwsh
+        run: |
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          Write-Host Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$containerFQDN" -Username "$containerUser" -Password "$containerPassword" -As DataSet
-          $DS = Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$containerFQDN" -Username "$containerUser" -Password "$containerPassword" -As DataSet
+          Write-Host Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "${{ steps.create-container.outputs.containerUser }}" -Password "${{ steps.create-container.outputs.containerPassword }}" -As DataSet
+          $DS = Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "${{ steps.create-container.outputs.containerUser }}" -Password "${{ steps.create-container.outputs.containerPassword }}" -As DataSet
 
           $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-
-        env:
-          SPAWNCTL_ACCESS_TOKEN: ${{ secrets.SPAWNCTL_ACCESS_TOKEN }} 
-
-      # - name: apply deployment to aks
-      #   shell: pwsh
-      #   run: |
-
-      #     $replaceMssqlversion = (Get-Content -Path ${{ github.workspace }}\cicd\aks\mssql.deployment.${{ steps.create-vars.outputs.osType }}-template.yml) -replace 'matrix.mssqlversion','${{ matrix.mssqlversion }}'
-      #     $replaceAcrURL = $replaceMssqlversion -replace 'containerRegistryName','${{ steps.azure-secrets.outputs.containerRegistryName }}.azurecr.io'
-      #     $replaceAcrURL | Set-Content -Path ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
-
-      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-      #     Get-Content -Path .\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
-      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-
-      #     kubectl apply -f ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
-      #     kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=${{ steps.create-vars.outputs.sqlPort }} --target-port=1433
-      #     kubectl wait pod --for=condition=Ready --all --timeout 600s # Experimental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
-          
-      # - name: check service
-      #   shell: pwsh
-      #   timeout-minutes: 3
-      #   run: |
-      #     $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
-
-      #     while ([String]::IsNullOrWhiteSpace($ipAddress))
-      #     {
-      #       Start-Sleep -Seconds 10
-      #       $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
-      #     }
-
-      #     # add environment variables
-      #     #---------------------------------------------------------------------------------------------------#
-      #     # IMPORTANT (and, you've got to be kidding me):                                                     #
-      #     # The space between the comma and the sqlPort is absolutely required to make the ANT Task work.     #
-      #     #---------------------------------------------------------------------------------------------------#
-      #     $fqdnAndPort = $ipAddress + ", " + ${{ steps.create-vars.outputs.sqlPort }};
-      #     #-----------------------------^---------------------------------------------------------------------#
-      #     #-----------------------------^---------------------------------------------------------------------#
-
-      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-      #     Write-Host "";
-      #     Write-Host ("fqdnAndPort value: {0}" -f $fqdnAndPort); 
-      #     Write-Host "";
-      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-      #     echo "fqdnAndPort=$fqdnAndPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
-      # - name: check sql server instance and update sa password
-      #   shell: pwsh
-      #   run: |
-      #     kubectl exec service/${{ matrix.mssqlversion }}-service -- powershell.exe -c 'Get-Service MSSQL*'
-      #     Write-Host "";
-      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-      #     Write-Host "";
-      #     Write-Host "SQL Server Info";
-      #     kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -l 60 -Q "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;"
-      #     Write-Host "";
-      #     Write-Host "Update sa password";
-      #     $sqlStatement = "ALTER LOGIN sa with password='" + $env:SA_PASSWORD + "',CHECK_POLICY=OFF,CHECK_EXPIRATION=OFF; ALTER LOGIN sa ENABLE;";
-      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-      #     Write-Host "";
-      #     Write-Output $sqlStatement
-      #     Write-Host "";
-      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-      #     kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -l 60 -Q "$sqlStatement"
-      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-
-      # - name: print sql version info
-      #   shell: pwsh
-      #   run: |
-      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-      #     Write-Host "";
-      #     Write-Host Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
-      #     $DS = Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
-
-      #     $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
-      #     Write-Host "";
-      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
       # # @SM --> TODO: jUnit results
       # - name: ant Build/tSQLt.validatebuild.xml
