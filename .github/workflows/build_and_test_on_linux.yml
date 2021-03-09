@@ -152,7 +152,7 @@ jobs:
       - name: Run database migrations
         shell: pwsh
         run: |
-          Set-Location ~
+          #Set-Location ~
           Get-ChildItem -r
 
           $DebugPreference = 'Continue';$VerbosePreference = 'Continue';
