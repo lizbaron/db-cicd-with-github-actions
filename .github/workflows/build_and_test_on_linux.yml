@@ -161,6 +161,7 @@ jobs:
 
           $dataImageName = 'tsqlt-linux-2017';
           $dataImageYmlPath = "./spawn/$dataImageName.yml"
+          Get-Content -Path $dataImageYmlPath;
 
           ($t = if($true){~/.spawnctl/bin/spawnctl create data-image -f $dataImageYmlPath -l 'debug';}) *>&1
           $t;
