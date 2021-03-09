@@ -153,13 +153,14 @@ jobs:
         shell: pwsh
         run: |
           #Set-Location ~
-          Get-ChildItem -r
+          #Set-Location D:\a\db-cicd-with-github-actions\db-cicd-with-github-actions\
+          #Get-ChildItem -r
 
           $DebugPreference = 'Continue';$VerbosePreference = 'Continue';
           Set-PSDebug -Trace 2;
 
           $dataImageName = 'tsqlt-linux-2017';
-          $dataImageYmlPath = "~/cicd/spawn/$dataImageName.yml"
+          $dataImageYmlPath = "/cicd/spawn/$dataImageName.yml"
 
           ($t = if($true){~/.spawnctl/bin/spawnctl create data-image -f $dataImageYmlPath -l 'debug';}) *>&1
           $t;
