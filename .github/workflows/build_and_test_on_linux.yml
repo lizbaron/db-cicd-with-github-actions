@@ -153,19 +153,16 @@ jobs:
       - name: Run database migrations
         shell: pwsh
         run: |
-          $DebugPreference = 'Continue';$VerbosePreference = 'Continue';
-          Set-PSDebug -Trace 2;
 
           $dataImageName = 'tsqlt-linux-2017';
           $dataImageYmlPath = "./cicd/spawn/$dataImageName.yml"
           Get-Content -Path $dataImageYmlPath;
 
-          ($t = if($true){& "${{ github.workspace }}\spawnctl.exe" create data-image -f $dataImageYmlPath -l 'debug';}) *>&1
-          $t;
+          & "${{ github.workspace }}\spawnctl.exe" create data-image -f $dataImageYmlPath;
 
           echo "Creating 'tSQLtOnLinux' Spawn data container from image '$dataImageName'";
-          $containerName= & "${{ github.workspace }}\spawnctl.exe" create data-container --image $dataImageName --lifetime 10m -q -l debug
-          $containerJSON= & "${{ github.workspace }}\spawnctl.exe" get data-container $containerName -o json -l debug
+          $containerName= & "${{ github.workspace }}\spawnctl.exe" create data-container --image $dataImageName --lifetime 10m -q
+          $containerJSON= & "${{ github.workspace }}\spawnctl.exe" get data-container $containerName -o json
           $containerInfo = ConvertFrom-JSON -inputObject $containerJSON;
           $containerFQDN=$containerInfo.host+", "+$containerInfo.port;
           $containerUser=$containerInfo.user;
