@@ -190,19 +190,11 @@ jobs:
           $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Write-Host "";
-          # Write-Host Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$containerFQDN" -Username "$containerUser" -Password "$containerPassword" -As DataSet
-          # $DS = Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$containerFQDN" -Username "$containerUser" -Password "$containerPassword" -As DataSet
 
-          $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
-          Write-Host "";
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-
-      # # @SM --> TODO: jUnit results
-      # - name: ant Build/tSQLt.validatebuild.xml
-      #   working-directory: ${{ github.workspace }}\tSQLt\Build
-      #   run: ant -buildfile tSQLt.validatebuild.xml all -D"db.server"="$env:fqdnAndPort" -D"db.name"=tSQLt_dev -D"db.login"="-U sa -P $env:SA_PASSWORD -l 180 -t 360" -D"sqlcmd.path"="${{ steps.create-vars.outputs.sqlcmdPath }}"
+      # @SM --> TODO: jUnit results
+      - name: ant Build/tSQLt.validatebuild.xml
+        working-directory: ${{ github.workspace }}\tSQLt\Build
+        run: ant -buildfile tSQLt.validatebuild.xml all -D"db.server"="${{ steps.create-container.outputs.containerFQDN }}" -D"db.name"=tSQLt_dev -D"db.login"="-U ${{ steps.create-container.outputs.containerUser }} -P ${{ steps.create-container.outputs.containerPassword }} -l 180 -t 360" -D"sqlcmd.path"="${{ steps.create-vars.outputs.sqlcmdPath }}"
 
       # - name: create junit artifact
       #   shell: pwsh
