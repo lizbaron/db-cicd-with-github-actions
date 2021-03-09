@@ -160,7 +160,7 @@ jobs:
           Set-PSDebug -Trace 2;
 
           $dataImageName = 'tsqlt-linux-2017';
-          $dataImageYmlPath = "/cicd/spawn/$dataImageName.yml"
+          $dataImageYmlPath = "./cicd/spawn/$dataImageName.yml"
 
           ($t = if($true){~/.spawnctl/bin/spawnctl create data-image -f $dataImageYmlPath -l 'debug';}) *>&1
           $t;
