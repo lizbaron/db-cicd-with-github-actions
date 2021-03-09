@@ -159,6 +159,7 @@ jobs:
           # Get-Content -Path $dataImageYmlPath;
 
           # & "${{ github.workspace }}\spawnctl.exe" create data-image -f $dataImageYmlPath -q;
+          & "${{ github.workspace }}\spawnctl.exe" get data-image;
 
           echo "Creating 'tSQLtOnLinux' Spawn data container from image '$dataImageName'";
           $containerName= & "${{ github.workspace }}\spawnctl.exe" create data-container --image $dataImageName --lifetime 30m -q
@@ -181,115 +182,115 @@ jobs:
         env:
           SPAWNCTL_ACCESS_TOKEN: ${{ secrets.SPAWNCTL_ACCESS_TOKEN }} 
 
-      - name: apply deployment to aks
-        shell: pwsh
-        run: |
+      # - name: apply deployment to aks
+      #   shell: pwsh
+      #   run: |
 
-          $replaceMssqlversion = (Get-Content -Path ${{ github.workspace }}\cicd\aks\mssql.deployment.${{ steps.create-vars.outputs.osType }}-template.yml) -replace 'matrix.mssqlversion','${{ matrix.mssqlversion }}'
-          $replaceAcrURL = $replaceMssqlversion -replace 'containerRegistryName','${{ steps.azure-secrets.outputs.containerRegistryName }}.azurecr.io'
-          $replaceAcrURL | Set-Content -Path ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
+      #     $replaceMssqlversion = (Get-Content -Path ${{ github.workspace }}\cicd\aks\mssql.deployment.${{ steps.create-vars.outputs.osType }}-template.yml) -replace 'matrix.mssqlversion','${{ matrix.mssqlversion }}'
+      #     $replaceAcrURL = $replaceMssqlversion -replace 'containerRegistryName','${{ steps.azure-secrets.outputs.containerRegistryName }}.azurecr.io'
+      #     $replaceAcrURL | Set-Content -Path ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
 
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Get-Content -Path .\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     Get-Content -Path .\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
-          kubectl apply -f ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
-          kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=${{ steps.create-vars.outputs.sqlPort }} --target-port=1433
-          kubectl wait pod --for=condition=Ready --all --timeout 600s # Experimental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
+      #     kubectl apply -f ${{ github.workspace }}\cicd\aks\${{ matrix.mssqlversion }}.deployment.yml
+      #     kubectl expose deployment ${{ matrix.mssqlversion }}-deployment --type=LoadBalancer --name=${{ matrix.mssqlversion }}-service --port=${{ steps.create-vars.outputs.sqlPort }} --target-port=1433
+      #     kubectl wait pod --for=condition=Ready --all --timeout 600s # Experimental (https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#wait)
           
-      - name: check service
-        shell: pwsh
-        timeout-minutes: 3
-        run: |
-          $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
+      # - name: check service
+      #   shell: pwsh
+      #   timeout-minutes: 3
+      #   run: |
+      #     $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
 
-          while ([String]::IsNullOrWhiteSpace($ipAddress))
-          {
-            Start-Sleep -Seconds 10
-            $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
-          }
+      #     while ([String]::IsNullOrWhiteSpace($ipAddress))
+      #     {
+      #       Start-Sleep -Seconds 10
+      #       $ipAddress = kubectl get services ${{ matrix.mssqlversion }}-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}"
+      #     }
 
-          # add environment variables
-          #---------------------------------------------------------------------------------------------------#
-          # IMPORTANT (and, you've got to be kidding me):                                                     #
-          # The space between the comma and the sqlPort is absolutely required to make the ANT Task work.     #
-          #---------------------------------------------------------------------------------------------------#
-          $fqdnAndPort = $ipAddress + ", " + ${{ steps.create-vars.outputs.sqlPort }};
-          #-----------------------------^---------------------------------------------------------------------#
-          #-----------------------------^---------------------------------------------------------------------#
+      #     # add environment variables
+      #     #---------------------------------------------------------------------------------------------------#
+      #     # IMPORTANT (and, you've got to be kidding me):                                                     #
+      #     # The space between the comma and the sqlPort is absolutely required to make the ANT Task work.     #
+      #     #---------------------------------------------------------------------------------------------------#
+      #     $fqdnAndPort = $ipAddress + ", " + ${{ steps.create-vars.outputs.sqlPort }};
+      #     #-----------------------------^---------------------------------------------------------------------#
+      #     #-----------------------------^---------------------------------------------------------------------#
 
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Write-Host "";
-          Write-Host ("fqdnAndPort value: {0}" -f $fqdnAndPort); 
-          Write-Host "";
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          echo "fqdnAndPort=$fqdnAndPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     Write-Host "";
+      #     Write-Host ("fqdnAndPort value: {0}" -f $fqdnAndPort); 
+      #     Write-Host "";
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     echo "fqdnAndPort=$fqdnAndPort" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: check sql server instance and update sa password
-        shell: pwsh
-        run: |
-          kubectl exec service/${{ matrix.mssqlversion }}-service -- powershell.exe -c 'Get-Service MSSQL*'
-          Write-Host "";
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Write-Host "";
-          Write-Host "SQL Server Info";
-          kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -l 60 -Q "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;"
-          Write-Host "";
-          Write-Host "Update sa password";
-          $sqlStatement = "ALTER LOGIN sa with password='" + $env:SA_PASSWORD + "',CHECK_POLICY=OFF,CHECK_EXPIRATION=OFF; ALTER LOGIN sa ENABLE;";
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Write-Host "";
-          Write-Output $sqlStatement
-          Write-Host "";
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -l 60 -Q "$sqlStatement"
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      # - name: check sql server instance and update sa password
+      #   shell: pwsh
+      #   run: |
+      #     kubectl exec service/${{ matrix.mssqlversion }}-service -- powershell.exe -c 'Get-Service MSSQL*'
+      #     Write-Host "";
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     Write-Host "";
+      #     Write-Host "SQL Server Info";
+      #     kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -l 60 -Q "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;"
+      #     Write-Host "";
+      #     Write-Host "Update sa password";
+      #     $sqlStatement = "ALTER LOGIN sa with password='" + $env:SA_PASSWORD + "',CHECK_POLICY=OFF,CHECK_EXPIRATION=OFF; ALTER LOGIN sa ENABLE;";
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     Write-Host "";
+      #     Write-Output $sqlStatement
+      #     Write-Host "";
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -l 60 -Q "$sqlStatement"
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
-      - name: print sql version info
-        shell: pwsh
-        run: |
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
-          Write-Host "";
-          Write-Host Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
-          $DS = Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
+      # - name: print sql version info
+      #   shell: pwsh
+      #   run: |
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     Write-Host "";
+      #     Write-Host Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
+      #     $DS = Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "$env:fqdnAndPort" -Username "sa" -Password "$env:SA_PASSWORD" -As DataSet
 
-          $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
-          Write-Host "";
-          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+      #     $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
+      #     Write-Host "";
+      #     Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
-      # @SM --> TODO: jUnit results
-      - name: ant Build/tSQLt.validatebuild.xml
-        working-directory: ${{ github.workspace }}\tSQLt\Build
-        run: ant -buildfile tSQLt.validatebuild.xml all -D"db.server"="$env:fqdnAndPort" -D"db.name"=tSQLt_dev -D"db.login"="-U sa -P $env:SA_PASSWORD -l 180 -t 360" -D"sqlcmd.path"="${{ steps.create-vars.outputs.sqlcmdPath }}"
+      # # @SM --> TODO: jUnit results
+      # - name: ant Build/tSQLt.validatebuild.xml
+      #   working-directory: ${{ github.workspace }}\tSQLt\Build
+      #   run: ant -buildfile tSQLt.validatebuild.xml all -D"db.server"="$env:fqdnAndPort" -D"db.name"=tSQLt_dev -D"db.login"="-U sa -P $env:SA_PASSWORD -l 180 -t 360" -D"sqlcmd.path"="${{ steps.create-vars.outputs.sqlcmdPath }}"
 
-      - name: create junit artifact
-        shell: pwsh
-        run: |
-          $basePath = "${{ github.workspace }}";
-          $basePath;
+      # - name: create junit artifact
+      #   shell: pwsh
+      #   run: |
+      #     $basePath = "${{ github.workspace }}";
+      #     $basePath;
 
-          $ArtifactPath = "$env:TEST_ARTIFACT_DIR\";
-          $ArtifactPath;
+      #     $ArtifactPath = "$env:TEST_ARTIFACT_DIR\";
+      #     $ArtifactPath;
 
-          New-Item -Path $ArtifactPath -ItemType directory -Force
+      #     New-Item -Path $ArtifactPath -ItemType directory -Force
 
-          (Get-ChildItem $basePath -recurse -include "*TestResults*.xml").FullName; 
+      #     (Get-ChildItem $basePath -recurse -include "*TestResults*.xml").FullName; 
 
-          (Get-ChildItem $basePath -recurse -include "*TestResults*.xml").FullName|Copy-Item -Destination $ArtifactPath -recurse -PassThru
-          Set-Content -Path ($ArtifactPath+"CommitId.txt") -Value "${{ github.sha }}"
+      #     (Get-ChildItem $basePath -recurse -include "*TestResults*.xml").FullName|Copy-Item -Destination $ArtifactPath -recurse -PassThru
+      #     Set-Content -Path ($ArtifactPath+"CommitId.txt") -Value "${{ github.sha }}"
 
-      - name: archive junit test artifact
-        uses: actions/upload-artifact@v2
-        with:
-          if-no-files-found: error
-          name: jUnitTests-${{ matrix.mssqlversion }}
-          path: "${{ env.test_artifact_dir }}\\"
+      # - name: archive junit test artifact
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     if-no-files-found: error
+      #     name: jUnitTests-${{ matrix.mssqlversion }}
+      #     path: "${{ env.test_artifact_dir }}\\"
 
-      - name: delete the aks namespace
-        if: ${{ always() }}
-        shell: pwsh
-        run: |
-          kubectl delete namespaces ${{ steps.create-vars.outputs.namespace }}
+      # - name: delete the aks namespace
+      #   if: ${{ always() }}
+      #   shell: pwsh
+      #   run: |
+      #     kubectl delete namespaces ${{ steps.create-vars.outputs.namespace }}
 
 
 
