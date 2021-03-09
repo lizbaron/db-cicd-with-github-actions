@@ -2,3 +2,5 @@ sourceType: empty
 name: tsqlt-linux-2017
 engine: mssql
 version: 2017
+teams:
+  - "tSQLt-org:ctlfsh"
