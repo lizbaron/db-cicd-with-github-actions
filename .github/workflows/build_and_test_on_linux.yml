@@ -152,6 +152,7 @@ jobs:
       - name: Run database migrations
         shell: pwsh
         run: |
+          Set-PSDebug -Trace 2;
           $dataImageName = 'tsqlt-linux-2017';
           $dataImageYmlPath = "~/cicd/spawn/$dataImageName.yml"
 
