@@ -158,7 +158,8 @@ jobs:
           $dataImageName = 'tsqlt-linux-2017';
           $dataImageYmlPath = "~/cicd/spawn/$dataImageName.yml"
 
-          ~/.spawnctl/bin/spawnctl create data-image -f $dataImageYmlPath -l debug
+          ($t = if($true){~/.spawnctl/bin/spawnctl create data-image -f $dataImageYmlPath -l 'debug';}) *>&1
+          $t;
 
           echo "Creating 'tSQLtOnLinux' Spawn data container from image '$dataImageName'";
           $containerName= ~/.spawnctl/bin/spawnctl create data-container --image $dataImageName --lifetime 10m -q -l debug
