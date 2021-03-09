@@ -144,13 +144,15 @@ jobs:
       #     path: "${{ github.workspace }}\\tSQLt\\Build_Artifact"
 
       - name: Install spawnctl
+        shell: pwsh
         run: |
           echo "Downloading and installing spawnctl..."
-          curl -sL https://run.spawn.cc/install | sh
-          ~/.spawnctl/bin/spawnctl version
+          Invoke-WebRequest -Uri https://run.spawn.cc/spawnctl.exe -UseBasicParsing -OutFile ${{ github.workspace }}\spawnctl.exe
+          "${{ github.workspace }}\spawnctl.exe" version
 
       - name: Run database migrations
         shell: pwsh
+        if: ${{ false }}
         run: |
           Get-ChildItem -r
 
