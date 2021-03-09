@@ -147,13 +147,11 @@ jobs:
         run: |
           echo "Downloading and installing spawnctl..."
           curl -sL https://run.spawn.cc/install | sh
-          #export PATH=$PATH:$HOME/.spawnctl/bin
+          ~/.spawnctl/bin/spawnctl version
 
       - name: Run database migrations
         shell: pwsh
         run: |
-          #Set-Location ~
-          #Set-Location D:\a\db-cicd-with-github-actions\db-cicd-with-github-actions\
           Get-ChildItem -r
 
           $DebugPreference = 'Continue';$VerbosePreference = 'Continue';
@@ -186,7 +184,6 @@ jobs:
 
         env:
           SPAWNCTL_ACCESS_TOKEN: ${{ secrets.SPAWNCTL_ACCESS_TOKEN }} 
-
       # - name: apply deployment to aks
       #   shell: pwsh
       #   run: |
