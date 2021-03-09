@@ -149,9 +149,10 @@ jobs:
           echo "Downloading and installing spawnctl..."
           $DebugPreference = 'Continue';$VerbosePreference = 'Continue';
           Set-PSDebug -Trace 2;
-
+          date; 
           Invoke-WebRequest -Uri "https://run.spawn.cc/spawnctl.exe" -UseBasicParsing -OutFile "${{ github.workspace }}\spawnctl.exe"
-          "${{ github.workspace }}\spawnctl.exe" version
+          date; 
+          & "${{ github.workspace }}\spawnctl.exe" version
 
       - name: Run database migrations
         shell: pwsh
