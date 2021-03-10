@@ -46,7 +46,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: tSQLt-org/tSQLt
-          ref: update-tests-for-linux # OH BY THE WAY, #MDP --> order actually matters. If the ref does not appear here, checkout ignores it. No error. Very helpful.
+          #ref: update-tests-for-linux # OH BY THE WAY, #MDP --> order actually matters. If the ref does not appear here, checkout ignores it. No error. Very helpful.
           path: tSQLt
           token: ${{ secrets.my_pat }}
           # Why do we need a token here? It's a public repository.
