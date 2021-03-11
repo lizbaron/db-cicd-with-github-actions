@@ -110,6 +110,7 @@ jobs:
     strategy:
       matrix: 
         node: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+      fail-fast: false
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
     # Note: [https://kubernetes.io/docs/tasks/tools/install-kubectl/#before-you-begin]
