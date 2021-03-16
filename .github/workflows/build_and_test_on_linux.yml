@@ -7,10 +7,10 @@ name: Build and Test tSQLt on Linux
 
 # Controls when the action will run. 
 on:
-  schedule:
-    # * is a special character in YAML so you have to quote this string
-    # Run every sunday at 6:20 AM
-    - cron:  '0 * * * *'
+  # schedule:
+  #   # * is a special character in YAML so you have to quote this string
+  #   # Run every sunday at 6:20 AM
+  #   - cron:  '0 * * * *'
 
   push:
     branches:
