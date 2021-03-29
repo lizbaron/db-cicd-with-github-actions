@@ -345,7 +345,8 @@ jobs:
           kubectl exec service/${{ matrix.mssqlversion }}-service -- sqlcmd -l 60 -Q "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;"
           Write-Host "";
           Write-Host "Update sa password";
-          $sqlStatement = "ALTER LOGIN sa with password='" + $env:SA_PASSWORD + "',CHECK_POLICY=OFF,CHECK_EXPIRATION=OFF; ALTER LOGIN sa ENABLE;";
+          # ALTER LOGIN sa WITH PASSWORD='Welcome1!',CHECK_POLICY=OFF,CHECK_EXPIRATION=OFF,DEFAULT_DATABASE=tempdb; ALTER LOGIN sa ENABLE;
+          $sqlStatement = "ALTER LOGIN sa WITH PASSWORD='" + $env:SA_PASSWORD + "',CHECK_POLICY=OFF,CHECK_EXPIRATION=OFF,DEFAULT_DATABASE=tempdb; ALTER LOGIN sa ENABLE;";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           Write-Output $sqlStatement
