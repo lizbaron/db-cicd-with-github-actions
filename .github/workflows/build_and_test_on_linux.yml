@@ -38,7 +38,8 @@ jobs:
       PFX_PATH: ${{ github.workspace }}\tSQLt\Build\tSQLtOfficialSigningKey.pfx
       PFX_PASSWORD: ${{ secrets.PFX_PASSWORD }}
       ARTIFACT_DIR: ${{ github.workspace }}\artifacts
-      
+      MSBUILD_HOME: C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin
+
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it. 
       # But this is misleading, because this variable is only really helpful as ${{ github.workspace }}
@@ -69,7 +70,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.2
 
       - name: ant Build\tSQLt.buildCLR.xml --> Build/output/CLRBuild/
-        run: ant -buildfile "${{ github.workspace }}\tSQLt\Build\tSQLt.buildCLR.xml" all
+        run: ant -buildfile "${{ github.workspace }}\tSQLt\Build\tSQLt.buildCLR.xml" -D"msbuild.path"="$env:MSBUILD_HOME" all
  
       - name: ant Build/tSQLt.build.xml --> Build/output/tSQLtBuild
         run: ant -buildfile "${{ github.workspace }}\tSQLt\Build\tSQLt.build.xml" all
