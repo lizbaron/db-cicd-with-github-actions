@@ -139,6 +139,7 @@ jobs:
         id: create-container
         shell: pwsh
         run: |
+          & "${{ github.workspace }}\spawnctl.exe" spawnctl get data-images
 
           $dataImageName = "${{ matrix.data-image }}";
 
