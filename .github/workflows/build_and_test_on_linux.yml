@@ -95,7 +95,7 @@ jobs:
 
     strategy:
       matrix: 
-        node: [1,2,3,4,5]
+        data-image: [mssql:empty,mssql-empty:2019]
       fail-fast: false
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
@@ -140,12 +140,7 @@ jobs:
         shell: pwsh
         run: |
 
-          $dataImageName = 'tsqlt-linux-2017';
-          # $dataImageYmlPath = "./cicd/spawn/$dataImageName.yml"
-          # Get-Content -Path $dataImageYmlPath;
-
-          # & "${{ github.workspace }}\spawnctl.exe" create data-image -f $dataImageYmlPath -q;
-          & "${{ github.workspace }}\spawnctl.exe" get data-image;
+          $dataImageName = ${{ matrix.data-image }};
 
           echo "Creating 'tSQLtOnLinux' Spawn data container from image '$dataImageName'";
           $containerName= & "${{ github.workspace }}\spawnctl.exe" create data-container --image $dataImageName --lifetime 30m -q
@@ -178,7 +173,7 @@ jobs:
       - name: build tSQLtFacade  --> Build/output/DacpacBuild/
         shell: pwsh
         run: |
-          .\Build\FacadeBuildDacpac.ps1 -ErrorAction Stop -ServerName "${{ steps.create-container.outputs.containerFQDN }}" -DatabaseName "tSQLt_dev" -Login "-U ${{ steps.create-container.outputs.containerUser }} -P ${{ steps.create-container.outputs.containerPassword }} -l 180 -t 360" -SqlCmdPath "${{ steps.create-vars.outputs.sqlcmdPath }}" -SqlPackagePath "$env:SQLPACKAGE_HOME"
+          ${{ github.workspace }}\tSQLt\Build\FacadeBuildDacpac.ps1 -ErrorAction Stop -ServerName "${{ steps.create-container.outputs.containerFQDN }}" -DatabaseName "tSQLt_dev" -Login "-U ${{ steps.create-container.outputs.containerUser }} -P ${{ steps.create-container.outputs.containerPassword }} -l 180 -t 360" -SqlCmdPath "${{ steps.create-vars.outputs.sqlcmdPath }}" -SqlPackagePath "$env:SQLPACKAGE_HOME"
 
       - name: download tSQLtBuildArtifact artifact
         uses: actions/download-artifact@v2
@@ -189,7 +184,7 @@ jobs:
       - name: package tSQLt.zip  --> Build/output/tSQLt/
         shell: pwsh
         run: |
-          .\Build\BuildtSQLtZip.ps1 -ErrorAction Stop
+          ${{ github.workspace }}\tSQLt\Build\BuildtSQLtZip.ps1 -ErrorAction Stop
 
       # @SM --> TODO: jUnit results
       - name: ant Build/tSQLt.validatebuild.xml
