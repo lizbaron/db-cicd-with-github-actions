@@ -140,7 +140,7 @@ jobs:
         shell: pwsh
         run: |
 
-          $dataImageName = ${{ matrix.data-image }};
+          $dataImageName = "${{ matrix.data-image }}";
 
           echo "Creating 'tSQLtOnLinux' Spawn data container from image '$dataImageName'";
           $containerName= & "${{ github.workspace }}\spawnctl.exe" create data-container --image $dataImageName --lifetime 30m -q
