@@ -76,7 +76,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path "$env:ARTIFACT_DIR"
-          $basePath = "${{ github.workspace }}\tSQLt\Build\output\tSQLtBuild";
+          $basePath = "${{ github.workspace }}\tSQLt\Build\output\tSQLtBuild\";
           $artifactFiles = (@("ReadMe.txt","tSQLt.tests.zip","tSQLtFacade.zip","tSQLtFiles.zip","tSQLtSnippets(SQLPrompt).zip","Version.txt")| ForEach-Object { $basePath + $_ });
           $artifactFiles | Copy-Item -Verbose -Destination "$env:ARTIFACT_DIR";
 
