@@ -95,7 +95,7 @@ jobs:
 
     strategy:
       matrix: 
-        data-image: [mssql:empty,mssql-empty:2019]
+        data-image: ["mssql:empty","mssql-empty:2019"]
       fail-fast: false
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
