@@ -56,11 +56,6 @@ jobs:
           token: ${{ secrets.my_pat }}
           # Why do we need a token here? It's a public repository.
 
-      - name: Add sqlpackage to PATH
-        shell: pwsh
-        run: | 
-          Test-Path "C:\Program Files\Microsoft SQL Server\150\DAC\bin\sqlpackage.exe"
-
       # documentation: This is just what you need to do...
       - name: create and install unofficial pfx file for signing dlls
         shell: pwsh
@@ -73,24 +68,8 @@ jobs:
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
 
-      - name: build tsqltCLR
-        shell: pwsh
-        run: |
-          cd "${{ github.workspace }}\tSQLt\tSQLtCLR"
-          msbuild .\tSQLtCLR.sln -m -p:Configuration=CruiseControl
-
-      - name: copy files to artifact staging and compress to tSQLtCLR.zip
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Path "$env:ARTIFACT_DIR\tSQLtCLR"
-          New-Item -ItemType Directory -Path "${{ github.workspace }}\tSQLt\Build\output"
-          Get-Item -Path "${{ github.workspace }}\tSQLt\tSQLtCLR\*\bin\*\*" -Filter *.dll | Copy-Item -Destination "$env:ARTIFACT_DIR\tSQLtCLR" -Container:$false
-          $compress = @{
-            Path = "$env:ARTIFACT_DIR\tSQLtCLR\*.dll"
-            CompressionLevel = "Fastest"
-            DestinationPath = "${{ github.workspace }}\tSQLt\Build\output\tSQLtCLR.zip"
-            }
-          Compress-Archive @compress
+      - name: ant Build\tSQLt.buildCLR.xml --> Build/output/CLRBuild/
+        run: ant -buildfile "${{ github.workspace }}\tSQLt\Build\tSQLt.buildCLR.xml" all
  
       - name: ant Build/tSQLt.build.xml --> Build/output/tSQLtBuild
         run: ant -buildfile "${{ github.workspace }}\tSQLt\Build\tSQLt.build.xml" all
@@ -101,7 +80,7 @@ jobs:
           Remove-Item "$env:ARTIFACT_DIR" -Recurse
           New-Item -ItemType Directory -Path "$env:ARTIFACT_DIR"
           $basePath = "${{ github.workspace }}\tSQLt\Build\output\tSQLtBuild";
-          $artifactFiles = (@("Version.txt","tSQLtFiles.zip","tSQLt.tests.zip","tSQLtSnippets(SQLPrompt).zip")| ForEach-Object { $basePath + $_ });
+          $artifactFiles = (@("ReadMe.txt","tSQLt.tests.zip","tSQLtFacade.zip","tSQLtFiles.zip","tSQLtSnippets(SQLPrompt).zip","Version.txt")| ForEach-Object { $basePath + $_ });
           $artifactFiles | Copy-Item -Verbose -Destination "$env:ARTIFACT_DIR";
 
       - name: Archive production artifact
