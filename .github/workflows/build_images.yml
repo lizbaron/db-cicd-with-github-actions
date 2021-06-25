@@ -1,4 +1,4 @@
-# This workflow creates the ACR images for the different suported SQL Server versions.
+# This workflow creates the ACR images for the different supported SQL Server versions.
 
 name: Build MSSQL Images
 

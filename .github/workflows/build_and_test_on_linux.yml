@@ -51,10 +51,15 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: tSQLt-org/tSQLt
-          ref: update-tests-for-linux # OH BY THE WAY, #MDP --> order actually matters. If the ref does not appear here, checkout ignores it. No error. Very helpful.
+          ref: tSQLtFacadeBuild # OH BY THE WAY, #MDP --> order actually matters. If the ref does not appear here, checkout ignores it. No error. Very helpful.
           path: tSQLt
           token: ${{ secrets.my_pat }}
           # Why do we need a token here? It's a public repository.
+
+      - name: Add sqlpackage to PATH
+        shell: pwsh
+        run: | 
+          Test-Path "C:\Program Files\Microsoft SQL Server\150\DAC\bin\sqlpackage.exe"
 
       # documentation: This is just what you need to do...
       - name: create and install unofficial pfx file for signing dlls
@@ -87,7 +92,7 @@ jobs:
             }
           Compress-Archive @compress
  
-      - name: ant Build/tSQLt.build.xml
+      - name: ant Build/tSQLt.build.xml --> Build/output/tSQLtBuild
         run: ant -buildfile "${{ github.workspace }}\tSQLt\Build\tSQLt.build.xml" all
 
       - name: copy tSQLt artifacts to ${{ env.artifact_dir }}
@@ -95,36 +100,34 @@ jobs:
         run: |
           Remove-Item "$env:ARTIFACT_DIR" -Recurse
           New-Item -ItemType Directory -Path "$env:ARTIFACT_DIR"
-          $basePath = "${{ github.workspace }}\tSQLt\Build\output\";
-          $artifactFiles = (@("Version.txt","tSQLt.zip","tSQLt.tests.zip","tSQLtSnippets(SQLPrompt).zip")| ForEach-Object { $basePath + $_ });
+          $basePath = "${{ github.workspace }}\tSQLt\Build\output\tSQLtBuild";
+          $artifactFiles = (@("Version.txt","tSQLtFiles.zip","tSQLt.tests.zip","tSQLtSnippets(SQLPrompt).zip")| ForEach-Object { $basePath + $_ });
           $artifactFiles | Copy-Item -Verbose -Destination "$env:ARTIFACT_DIR";
 
       - name: Archive production artifact
         uses: actions/upload-artifact@v2
         with:
           if-no-files-found: error
-          name: tSQLtAndTests
+          name: tSQLtBuildArtifact
           path: "${{ env.artifact_dir }}\\"
 
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
-  test-tSQLt:
+  build-facade-and-test-tSQLt:
     name: test build artifacts
     needs: [build-tSQLt]
     #if: ${{ always() }}
 
     strategy:
       matrix: 
-#        node: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
-        node: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+        node: [1,2,3,4,5]
       fail-fast: false
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
-    # Note: [https://kubernetes.io/docs/tasks/tools/install-kubectl/#before-you-begin]
-    #     You must use a kubectl version that is within one minor version difference of your cluster. For example, a v1.2 client should work with v1.1, v1.2, and v1.3 master. Using the latest version of kubectl helps avoid unforeseen issues.
     runs-on: windows-latest
 
     env:
-      TEST_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\TestResults
+      TEST_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\Validate\TestResults
+      SQLPACKAGE_HOME: "C:\Program Files\Microsoft SQL Server\150\DAC\bin\"
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -138,7 +141,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: tSQLt-org/tSQLt
-          ref: update-tests-for-linux # OH BY THE WAY, #MDP --> order actually matters. If the ref does not appear here, checkout ignores it. No error. Very helpful.
+          ref: tSQLtFacadeBuild # OH BY THE WAY, #MDP --> order actually matters. If the ref does not appear here, checkout ignores it. No error. Very helpful.
           path: tSQLt
           token: ${{ secrets.my_pat }}
 
@@ -148,12 +151,6 @@ jobs:
         run: |
           $sqlcmdPath = (Get-Command sqlcmd).Path.TrimEnd("\\SQLCMD.EXE");
           Write-Host ('::set-output name=sqlcmdPath::'+$sqlcmdPath);
-
-      - name: download tSQLtAndTests artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: tSQLtAndTests
-          path: "${{ github.workspace }}\\tSQLt\\Build_Artifact"
 
       - name: Install spawnctl
         shell: pwsh
@@ -189,7 +186,6 @@ jobs:
 
         env:
           SPAWNCTL_ACCESS_TOKEN: ${{ secrets.SPAWNCTL_ACCESS_TOKEN }} 
-        
 
       - name: print sql version info
         shell: pwsh
@@ -203,25 +199,35 @@ jobs:
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
+      - name: build tSQLtFacade  --> Build/output/DacpacBuild/
+        shell: pwsh
+        run: |
+          Build\FacadeBuildDacpac.ps1 -ErrorAction Stop -ServerName "${{ steps.create-container.outputs.containerFQDN }}" -DatabaseName "tSQLt_dev" -Login "-U ${{ steps.create-container.outputs.containerUser }} -P ${{ steps.create-container.outputs.containerPassword }} -l 180 -t 360" -SqlCmdPath "${{ steps.create-vars.outputs.sqlcmdPath }}" -SqlPackagePath "$env:SQLPACKAGE_HOME"
+
+      - name: download tSQLtBuildArtifact artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: tSQLtBuildArtifact
+          path: "${{ github.workspace }}\\tSQLt\\Build\\output\\tSQLtBuild"
+
+      - name: package tSQLt.zip  --> Build/output/tSQLt/
+        shell: pwsh
+        run: |
+          Build\BuildtSQLtZip.ps1 -ErrorAction Stop
+
       # @SM --> TODO: jUnit results
       - name: ant Build/tSQLt.validatebuild.xml
         working-directory: ${{ github.workspace }}\tSQLt\Build
-        run: ant -buildfile tSQLt.validatebuild.xml all -D"db.server"="${{ steps.create-container.outputs.containerFQDN }}" -D"db.name"=tSQLt_dev -D"db.login"="-U ${{ steps.create-container.outputs.containerUser }} -P ${{ steps.create-container.outputs.containerPassword }} -l 180 -t 360" -D"sqlcmd.path"="${{ steps.create-vars.outputs.sqlcmdPath }}"
+        run: ant -buildfile tSQLt.validatebuild.xml all -D"db.server"="${{ steps.create-container.outputs.containerFQDN }}" -D"db.name"=tSQLt_dev -D"db.login"="-U ${{ steps.create-container.outputs.containerUser }} -P ${{ steps.create-container.outputs.containerPassword }} -l 180 -t 360" -D"sqlcmd.path"="${{ steps.create-vars.outputs.sqlcmdPath }}"  -D"sqlpackage.path"="$env:SQLPACKAGE_HOME"
 
       - name: create junit artifact
         shell: pwsh
         run: |
-          $basePath = "${{ github.workspace }}";
-          $basePath;
-
           $ArtifactPath = "$env:TEST_ARTIFACT_DIR\";
+
           $ArtifactPath;
+          (Get-ChildItem $basePath -recurse -include "TestResults*.xml").FullName; 
 
-          New-Item -Path $ArtifactPath -ItemType directory -Force
-
-          (Get-ChildItem $basePath -recurse -include "*TestResults*.xml").FullName; 
-
-          (Get-ChildItem $basePath -recurse -include "*TestResults*.xml").FullName|Copy-Item -Destination $ArtifactPath -recurse -PassThru
           Set-Content -Path ($ArtifactPath+"CommitId.txt") -Value "${{ github.sha }}"
 
       - name: archive junit test artifact
@@ -231,11 +237,7 @@ jobs:
           name: jUnitTests-${{ matrix.mssqlversion }}
           path: "${{ env.test_artifact_dir }}\\"
 
-      # - name: delete the aks namespace
-      #   if: ${{ always() }}
-      #   shell: pwsh
-      #   run: |
-      #     kubectl delete namespaces ${{ steps.create-vars.outputs.namespace }}
+
 
 
 
