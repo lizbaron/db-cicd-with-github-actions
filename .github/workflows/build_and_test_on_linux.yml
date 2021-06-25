@@ -66,9 +66,6 @@ jobs:
           $pfxFile = Export-PfxCertificate -cert ("Cert:\LocalMachine\My\" + $cert.thumbprint) -FilePath $env:PFX_PATH -Password $pwd
           &"${{ github.workspace }}\tSQLt\Build\SnInstallPfx" "$env:PFX_PATH" "$env:PFX_PASSWORD" tSQLt_OfficialSigningKey
 
-      - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.2
-
       - name: ant Build\tSQLt.buildCLR.xml --> Build/output/CLRBuild/
         run: ant -buildfile "${{ github.workspace }}\tSQLt\Build\tSQLt.buildCLR.xml" -D"msbuild.path"="$env:MSBUILD_HOME" all
  
@@ -78,7 +75,6 @@ jobs:
       - name: copy tSQLt artifacts to ${{ env.artifact_dir }}
         shell: pwsh
         run: |
-          Remove-Item "$env:ARTIFACT_DIR" -Recurse
           New-Item -ItemType Directory -Path "$env:ARTIFACT_DIR"
           $basePath = "${{ github.workspace }}\tSQLt\Build\output\tSQLtBuild";
           $artifactFiles = (@("ReadMe.txt","tSQLt.tests.zip","tSQLtFacade.zip","tSQLtFiles.zip","tSQLtSnippets(SQLPrompt).zip","Version.txt")| ForEach-Object { $basePath + $_ });
