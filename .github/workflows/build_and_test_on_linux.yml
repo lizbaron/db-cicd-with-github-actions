@@ -95,7 +95,7 @@ jobs:
 
     strategy:
       matrix: 
-        data-image: ["mssql:empty","mssql-empty:2019"]
+        data-image: ["mssql","empty-mssql"]
       fail-fast: false
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
@@ -139,7 +139,7 @@ jobs:
         id: create-container
         shell: pwsh
         run: |
-          & "${{ github.workspace }}\spawnctl.exe" spawnctl get data-images
+          & "${{ github.workspace }}\spawnctl.exe" get data-images
 
           $dataImageName = "${{ matrix.data-image }}";
 
@@ -171,17 +171,17 @@ jobs:
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
-      - name: build tSQLtFacade  --> Build/output/DacpacBuild/
-        shell: pwsh
-        working-directory: ${{ github.workspace }}\tSQLt\
-        run: |
-          .\Build\FacadeBuildDacpac.ps1 -ErrorAction Stop -ServerName "${{ steps.create-container.outputs.containerFQDN }}" -DatabaseName "tSQLt_dev" -Login "-U ${{ steps.create-container.outputs.containerUser }} -P ${{ steps.create-container.outputs.containerPassword }} -l 180 -t 360" -SqlCmdPath "${{ steps.create-vars.outputs.sqlcmdPath }}" -SqlPackagePath "$env:SQLPACKAGE_HOME"
-
       - name: download tSQLtBuildArtifact artifact
         uses: actions/download-artifact@v2
         with:
           name: tSQLtBuildArtifact
           path: "${{ github.workspace }}\\tSQLt\\Build\\output\\tSQLtBuild"
+
+      - name: build tSQLtFacade  --> Build/output/DacpacBuild/
+        shell: pwsh
+        working-directory: ${{ github.workspace }}\tSQLt\
+        run: |
+          .\Build\FacadeBuildDacpac.ps1 -ErrorAction Stop -ServerName "${{ steps.create-container.outputs.containerFQDN }}" -DatabaseName "tSQLt_dev" -Login "-U ${{ steps.create-container.outputs.containerUser }} -P ${{ steps.create-container.outputs.containerPassword }} -l 180 -t 360" -SqlCmdPath "${{ steps.create-vars.outputs.sqlcmdPath }}" -SqlPackagePath "$env:SQLPACKAGE_HOME"
 
       - name: package tSQLt.zip  --> Build/output/tSQLt/
         shell: pwsh
