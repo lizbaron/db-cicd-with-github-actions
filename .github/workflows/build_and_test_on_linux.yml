@@ -172,8 +172,9 @@ jobs:
 
       - name: build tSQLtFacade  --> Build/output/DacpacBuild/
         shell: pwsh
+        working-directory: ${{ github.workspace }}\tSQLt\
         run: |
-          ${{ github.workspace }}\tSQLt\Build\FacadeBuildDacpac.ps1 -ErrorAction Stop -ServerName "${{ steps.create-container.outputs.containerFQDN }}" -DatabaseName "tSQLt_dev" -Login "-U ${{ steps.create-container.outputs.containerUser }} -P ${{ steps.create-container.outputs.containerPassword }} -l 180 -t 360" -SqlCmdPath "${{ steps.create-vars.outputs.sqlcmdPath }}" -SqlPackagePath "$env:SQLPACKAGE_HOME"
+          .\Build\FacadeBuildDacpac.ps1 -ErrorAction Stop -ServerName "${{ steps.create-container.outputs.containerFQDN }}" -DatabaseName "tSQLt_dev" -Login "-U ${{ steps.create-container.outputs.containerUser }} -P ${{ steps.create-container.outputs.containerPassword }} -l 180 -t 360" -SqlCmdPath "${{ steps.create-vars.outputs.sqlcmdPath }}" -SqlPackagePath "$env:SQLPACKAGE_HOME"
 
       - name: download tSQLtBuildArtifact artifact
         uses: actions/download-artifact@v2
@@ -183,8 +184,9 @@ jobs:
 
       - name: package tSQLt.zip  --> Build/output/tSQLt/
         shell: pwsh
+        working-directory: ${{ github.workspace }}\tSQLt\
         run: |
-          ${{ github.workspace }}\tSQLt\Build\BuildtSQLtZip.ps1 -ErrorAction Stop
+          .\Build\BuildtSQLtZip.ps1 -ErrorAction Stop
 
       # @SM --> TODO: jUnit results
       - name: ant Build/tSQLt.validatebuild.xml
