@@ -177,7 +177,7 @@ jobs:
         shell: pwsh
         working-directory: ${{ github.workspace }}\tSQLt\
         run: |
-          .\Build\FacadeBuildDacpac.ps1 -ErrorAction Stop -ServerName "${{ steps.create-container.outputs.containerFQDN }}" -DatabaseName "tSQLt_dev" -Login "-U ${{ steps.create-container.outputs.containerUser }} -P ${{ steps.create-container.outputs.containerPassword }} -l 180 -t 360" -SqlCmdPath "${{ steps.create-vars.outputs.sqlcmdPath }}" -SqlPackagePath "$env:SQLPACKAGE_HOME"
+          .\Build\FacadeBuildDacpac.ps1 -ErrorAction Stop -ServerName "${{ steps.create-container.outputs.containerFQDN }}" -DatabaseName "tSQLt_dev" -Login "-U ${{ steps.create-container.outputs.containerUser }} -P ${{ steps.create-container.outputs.containerPassword }}" -SqlCmdPath "${{ steps.create-vars.outputs.sqlcmdPath }}" -SqlPackagePath "$env:SQLPACKAGE_HOME"
 
       - name: package tSQLt.zip  --> Build/output/tSQLt/
         shell: pwsh
@@ -188,7 +188,7 @@ jobs:
       # @SM --> TODO: jUnit results
       - name: ant Build/tSQLt.validatebuild.xml
         working-directory: ${{ github.workspace }}\tSQLt\Build
-        run: ant -buildfile tSQLt.validatebuild.xml all -D"db.server"="${{ steps.create-container.outputs.containerFQDN }}" -D"db.name"=tSQLt_dev -D"db.login"="-U ${{ steps.create-container.outputs.containerUser }} -P ${{ steps.create-container.outputs.containerPassword }} -l 180 -t 360" -D"sqlcmd.path"="${{ steps.create-vars.outputs.sqlcmdPath }}"  -D"sqlpackage.path"="$env:SQLPACKAGE_HOME"
+        run: ant -buildfile tSQLt.validatebuild.xml all -D"db.server"="${{ steps.create-container.outputs.containerFQDN }}" -D"db.name"=tSQLt_dev -D"db.login"="-U ${{ steps.create-container.outputs.containerUser }} -P ${{ steps.create-container.outputs.containerPassword }}" -D"sqlcmd.path"="${{ steps.create-vars.outputs.sqlcmdPath }}"  -D"sqlpackage.path"="$env:SQLPACKAGE_HOME"
 
       - name: create junit artifact
         shell: pwsh
