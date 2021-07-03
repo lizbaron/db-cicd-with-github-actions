@@ -17,10 +17,6 @@ on:
       - image-pipeline
   workflow_dispatch: 
     inputs:
-      msSqlVersions:
-        description: 'names of the spawn data-containers in JSON array format (e.g. ["linux2017"])'
-        required: true
-        default: '["linux2017"]'
       fail-fast:
         description: 'set to "false" to allow all matrix jobs to run, even if some fail'
         required: true
