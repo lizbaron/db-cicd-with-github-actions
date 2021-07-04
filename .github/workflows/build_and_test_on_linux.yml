@@ -17,7 +17,7 @@ on:
       - image-pipeline
   workflow_dispatch: 
     inputs:
-      msSqlVersions:
+      spawnDataImages:
         description: 'names of the data-images on spawn (e.g. ["mssql","empty-mssql"]) aka 2017 and 2019'
         required: true
         default: '["mssql","empty-mssql"]'
@@ -27,7 +27,7 @@ on:
         default: 'true'
 
 env:
-  MATRIX_VERSIONS: ${{ format('{{"mssqlversion":{0} }}',github.event.inputs.msSqlVersions) }}
+  MATRIX_VERSIONS: ${{ format('{{"data-image":{0} }}',github.event.inputs.spawnDataImages) }}
 
 
 jobs:
@@ -191,7 +191,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           if-no-files-found: error
-          name: dacpac-${{ matrix.mssqlversion }}
+          name: dacpacs
           path: "${{ env.dacpac_artifact_dir }}\\"
 
 
@@ -206,25 +206,42 @@ jobs:
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
     runs-on: windows-latest
 
+    env:
+      TSQLT_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\tSQLt
+
+
     steps:
 
       - name: download tSQLtBuildArtifact artifact
         uses: actions/download-artifact@v2
         with:
-          path: "${{ github.workspace }}\\tSQLt\\Build\\temp\\CreateArtifact"
+          name: tSQLtBuildArtifact
+          path: "${{ github.workspace }}\\tSQLt\\Build\\output\\tSQLtBuild"
+
+      - name: download tSQLt dacpac artifact(s)
+        uses: actions/download-artifact@v2
+        with:
+          name: dacpacs
+          path: "${{ github.workspace }}\\tSQLt\\Build\\output\\DacpacBuild"
 
       - name: inspect CreateArtifact directory
         shell: pwsh
-        working-directory: ${{ github.workspace }}\tSQLt\Build\temp\CreateArtifact
+        working-directory: ${{ github.workspace }}\tSQLt\Build\output
         run: |
           Get-ChildItem . -Recurse
 
-      # - name: package tSQLt.zip  --> Build/output/tSQLt/
-      #   shell: pwsh
-      #   working-directory: ${{ github.workspace }}\tSQLt\
-      #   run: |
-      #     .\Build\BuildtSQLtZip.ps1 -ErrorAction Stop
+      - name: package tSQLt.zip  --> Build/output/tSQLt/
+        shell: pwsh
+        working-directory: ${{ github.workspace }}\tSQLt\
+        run: |
+          .\Build\BuildtSQLtZip.ps1 -ErrorAction Stop
 
+      - name: create tSQLt artifact
+        uses: actions/upload-artifact@v2
+        with:
+          if-no-files-found: error
+          name: tSQLt
+          path: "${{ env.tsqlt_artifact_dir }}\\"
 
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   test-tSQLt-and-facade:
@@ -259,6 +276,11 @@ jobs:
           path: tSQLt
           token: ${{ secrets.my_pat }}
 
+      - name: download tSQLt artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: tSQLt
+          path: "${{ github.workspace }}\\tSQLt\\Build\\output\\tSQLt"
 
       # @SM --> TODO: jUnit results
       - name: ant Build/tSQLt.validatebuild.xml
@@ -279,7 +301,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           if-no-files-found: error
-          name: jUnitTests-${{ matrix.mssqlversion }}
+          name: jUnitTests-${{ matrix.data-image }}
           path: "${{ env.test_artifact_dir }}\\"
 
 
