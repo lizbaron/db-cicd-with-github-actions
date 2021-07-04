@@ -17,13 +17,23 @@ on:
       - image-pipeline
   workflow_dispatch: 
     inputs:
+      msSqlVersions:
+        description: 'names of the data-images on spawn (e.g. ["mssql","empty-mssql"]) aka 2017 and 2019'
+        required: true
+        default: '["mssql","empty-mssql"]'
       fail-fast:
         description: 'set to "false" to allow all matrix jobs to run, even if some fail'
         required: true
         default: 'true'
 
+env:
+  MATRIX_VERSIONS: ${{ format('{{"mssqlversion":{0} }}',github.event.inputs.msSqlVersions) }}
+
+
 jobs:
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
+
+
   build-tSQLt:
     name: build tSQLt
     #if: ${{ false }}
@@ -90,9 +100,8 @@ jobs:
     #if: ${{ always() }}
 
     strategy:
-      matrix: 
-        data-image: ["mssql","empty-mssql"]
-      fail-fast: false
+      matrix: ${{ fromJson(env.matrix_versions) }}
+      fail-fast: ${{ fromJSON(github.event.inputs.fail-fast) }}
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
     runs-on: windows-latest
@@ -224,9 +233,8 @@ jobs:
     #if: ${{ always() }}
 
     strategy:
-      matrix: 
-        data-image: ["mssql","empty-mssql"]
-      fail-fast: false
+      matrix: ${{ fromJson(env.matrix_versions) }}
+      fail-fast: ${{ fromJSON(github.event.inputs.fail-fast) }}
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
     runs-on: windows-latest
