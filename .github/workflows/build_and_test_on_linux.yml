@@ -84,7 +84,7 @@ jobs:
           path: "${{ env.artifact_dir }}\\"
 
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
-  build-facade-and-test-tSQLt:
+  build-facades:
     name: test build artifacts
     needs: [build-tSQLt]
     #if: ${{ always() }}
@@ -98,10 +98,9 @@ jobs:
     runs-on: windows-latest
 
     env:
-      TEST_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\temp\Validate\TestResults
       SQLPACKAGE_HOME: C:\Program Files\Microsoft SQL Server\150\DAC\bin\
+      DACPAC_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\DacpacBuild
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
 
       - name: Checkout self
@@ -179,11 +178,79 @@ jobs:
         run: |
           .\Build\FacadeBuildDacpac.ps1 -ErrorAction Stop -ServerName "${{ steps.create-container.outputs.containerFQDN }}" -DatabaseName "tSQLt_dev" -Login "-U ${{ steps.create-container.outputs.containerUser }} -P ${{ steps.create-container.outputs.containerPassword }}" -SqlCmdPath "${{ steps.create-vars.outputs.sqlcmdPath }}" -SqlPackagePath "$env:SQLPACKAGE_HOME"
 
-      - name: package tSQLt.zip  --> Build/output/tSQLt/
+      - name: create dacpacs artifact
+        uses: actions/upload-artifact@v2
+        with:
+          if-no-files-found: error
+          name: dacpac-${{ matrix.mssqlversion }}
+          path: "${{ env.dacpac_artifact_dir }}\\"
+
+
+
+
+# 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
+  create-artifact:
+    name: create artifact
+    needs: [build-facades]
+    #if: ${{ always() }}
+
+    # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
+    runs-on: windows-latest
+
+    steps:
+
+      - name: download tSQLtBuildArtifact artifact
+        uses: actions/download-artifact@v2
+        with:
+          path: "${{ github.workspace }}\\tSQLt\\Build\\temp\\CreateArtifact"
+
+      - name: inspect CreateArtifact directory
         shell: pwsh
-        working-directory: ${{ github.workspace }}\tSQLt\
+        working-directory: ${{ github.workspace }}\tSQLt\Build\temp\CreateArtifact
         run: |
-          .\Build\BuildtSQLtZip.ps1 -ErrorAction Stop
+          Get-ChildItem . -Recurse
+
+      # - name: package tSQLt.zip  --> Build/output/tSQLt/
+      #   shell: pwsh
+      #   working-directory: ${{ github.workspace }}\tSQLt\
+      #   run: |
+      #     .\Build\BuildtSQLtZip.ps1 -ErrorAction Stop
+
+
+# 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
+  test-tSQLt-and-facade:
+    name: test build artifact
+    needs: [create-artifact]
+    #if: ${{ always() }}
+
+    strategy:
+      matrix: 
+        data-image: ["mssql","empty-mssql"]
+      fail-fast: false
+
+    # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
+    runs-on: windows-latest
+
+    env:
+      TEST_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\temp\Validate\TestResults
+      SQLPACKAGE_HOME: C:\Program Files\Microsoft SQL Server\150\DAC\bin\
+      DACPAC_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\DacpacBuild
+
+    steps:
+
+      - name: Checkout self
+        uses: actions/checkout@v2
+        with:
+          path: cicd
+
+      - name: Checkout tSQLt
+        uses: actions/checkout@v2
+        with:
+          repository: tSQLt-org/tSQLt
+          ref: tSQLtFacadeBuild # OH BY THE WAY, #MDP --> order actually matters. If the ref does not appear here, checkout ignores it. No error. Very helpful.
+          path: tSQLt
+          token: ${{ secrets.my_pat }}
+
 
       # @SM --> TODO: jUnit results
       - name: ant Build/tSQLt.validatebuild.xml
