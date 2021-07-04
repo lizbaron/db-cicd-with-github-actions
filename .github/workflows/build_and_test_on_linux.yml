@@ -101,7 +101,7 @@ jobs:
       MATRIX_VERSIONS: ${{ format('{{"data-image":{0} }}',github.event.inputs.spawnDataImages) }}
 
     strategy:
-      matrix: ${{ fromJson(env.matrix_versions) }}
+      matrix: ${{ fromJson(jobs.build-facades.env.matrix_versions) }}
       fail-fast: ${{ fromJSON(github.event.inputs.fail-fast) }}
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
@@ -253,7 +253,7 @@ jobs:
       MATRIX_VERSIONS: ${{ format('{{"data-image":{0} }}',github.event.inputs.spawnDataImages) }}
 
     strategy:
-      matrix: ${{ fromJson(env.matrix_versions) }}
+      matrix: ${{ fromJson(jobs.test-tSQLt-and-facade.env.matrix_versions) }}
       fail-fast: ${{ fromJSON(github.event.inputs.fail-fast) }}
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
