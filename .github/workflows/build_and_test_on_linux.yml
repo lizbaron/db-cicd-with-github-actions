@@ -17,7 +17,7 @@ on:
       spawnDataImages:
         description: 'names of the data-images on spawn (e.g. ["mssql","empty-mssql"]) aka 2017 and 2019'
         required: true
-        default: ${{ env.DEFAULT_DATA_IMAGES }}
+        default: ${{ secrets.PFX_PASSWORD }}
       fail-fast:
         description: 'set to "false" to allow all matrix jobs to run, even if some fail'
         required: true
