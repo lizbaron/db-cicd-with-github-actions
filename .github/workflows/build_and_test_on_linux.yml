@@ -5,9 +5,6 @@
 
 name: Build and Test tSQLt on Linux
 
-env:
-  DEFAULT_DATA_IMAGES: '["mssql","empty-mssql"]'
-
 on:
   push:
     branches:
@@ -17,7 +14,7 @@ on:
       spawnDataImages:
         description: 'names of the data-images on spawn (e.g. ["mssql","empty-mssql"]) aka 2017 and 2019'
         required: true
-        default: ${{ secrets.PFX_PASSWORD }}
+        default: '["mssql","empty-mssql"]'
       fail-fast:
         description: 'set to "false" to allow all matrix jobs to run, even if some fail'
         required: true
@@ -45,6 +42,7 @@ jobs:
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           Write-Host ("matrix versions: {0}" -f $env:WF_MATRIX_VERSIONS);
+          Write-Host ("input default: {0}" -f ${{ inputs.spawnDataImages.default }});
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
