@@ -5,13 +5,10 @@
 
 name: Build and Test tSQLt on Linux
 
-# Controls when the action will run. 
-on:
-  # schedule:
-  #   # * is a special character in YAML so you have to quote this string
-  #   # Run every sunday at 6:20 AM
-  #   - cron:  '0 * * * *'
+env:
+  DEFAULT_DATA_IMAGES: '["mssql","empty-mssql"]'
 
+on:
   push:
     branches:
       - image-pipeline
@@ -20,13 +17,11 @@ on:
       spawnDataImages:
         description: 'names of the data-images on spawn (e.g. ["mssql","empty-mssql"]) aka 2017 and 2019'
         required: true
-        default: '["mssql","empty-mssql"]'
+        default: ${{ env.DEFAULT_DATA_IMAGES }}
       fail-fast:
         description: 'set to "false" to allow all matrix jobs to run, even if some fail'
         required: true
         default: 'true'
-env:
-  WF_MATRIX_VERSIONS: ${{ format('{{"data-image":{0} }}',github.event.inputs.spawnDataImages) }}
 
 jobs:
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
@@ -46,6 +41,7 @@ jobs:
         id: create-vars
         shell: pwsh
         run: |
+          # WF_MATRIX_VERSIONS: ${{ format('{{"data-image":{0} }}',github.event.inputs.spawnDataImages) }}
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           Write-Host ("matrix versions: {0}" -f $env:WF_MATRIX_VERSIONS);
@@ -121,16 +117,15 @@ jobs:
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   build-facades:
     name: test build artifacts
-    needs: [build-tSQLt]
+    needs: [build-tSQLt,set-up-env-vars]
     #if: ${{ always() }}
 
     env:
       SQLPACKAGE_HOME: C:\Program Files\Microsoft SQL Server\150\DAC\bin\
       DACPAC_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\DacpacBuild
-      MATRIX_VERSIONS: ${{ format('{{"data-image":{0} }}',github.event.inputs.spawnDataImages) }}
 
     strategy:
-      matrix: ${{ fromJson(github.env.wf_matrix_versions) }}
+      matrix: ${{ fromJson(needs.set-up-env-vars.outputs.matrixValues) }}
       fail-fast: ${{ fromJSON(github.event.inputs.fail-fast) }}
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
