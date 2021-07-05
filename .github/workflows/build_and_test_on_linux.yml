@@ -30,7 +30,8 @@ env:
 
 jobs:
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
-  annoying-seemingly-unnecessary-activites-to-create-env-vars:
+  set-up-env-vars:
+    name: set up matrix variables
     #if: ${{ always() }}
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
@@ -40,10 +41,21 @@ jobs:
       TSQLT_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\tSQLt
 
     steps:
-    - id: set-matrix
-      run: echo "::set-output name=matrix::{\"include\":[{\"project\":\"foo\",\"config\":\"Debug\"},{\"project\":\"bar\",\"config\":\"Release\"}]}"
 
+      - name: create variables
+        id: create-vars
+        shell: pwsh
+        run: |
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          Write-Host ("matrix versions: {0}" -f $env:WF_MATRIX_VERSIONS);
+          Write-Host "";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
+          Write-Host ('::set-output name=matrixValues::'+$env:WF_MATRIX_VERSIONS);
+
+    outputs:
+      matrixValues: ${{ steps.create-vars.outputs.matrixValues }}
 
 
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
