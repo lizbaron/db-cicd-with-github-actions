@@ -42,7 +42,7 @@ jobs:
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           Write-Host ("matrix versions: {0}" -f $env:WF_MATRIX_VERSIONS);
-          Write-Host ("input default: {0}" -f ${{ (github.event.inputs.spawnDataImages.default }});
+          Write-Host ("input: {0}" -f ${{ (github.event.inputs.spawnDataImages.description }});
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
