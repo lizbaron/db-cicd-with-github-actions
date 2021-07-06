@@ -14,11 +14,14 @@ on:
       spawnDataImages:
         description: 'names of the data-images on spawn (e.g. ["mssql","empty-mssql"]) aka 2017 and 2019'
         required: true
-        default: '["mssql","empty-mssql"]'
+        default: '["mssql","empty-mssql"]' # If you change this, remember to also update env.SPAWNDATAIMAGES_DEFAULT
       fail-fast:
         description: 'set to "false" to allow all matrix jobs to run, even if some fail'
         required: true
         default: 'true'
+
+env:
+  SPAWNDATAIMAGES_DEFAULT: '["mssql","empty-mssql"]'
 
 jobs:
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
@@ -39,14 +42,18 @@ jobs:
         shell: pwsh
         run: |
           # WF_MATRIX_VERSIONS: ${{ format('{{"data-image":{0} }}',github.event.inputs.spawnDataImages) }}
+          $spawnDataImages = ${{ github.event.inputs.spawnDataImages }};
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          Write-Host ("matrix versions: {0}" -f $env:WF_MATRIX_VERSIONS);
-          Write-Host ("input: {0}" -f ${{ (github.event.inputs.spawnDataImages.description }});
+          Write-Host ("input: {0}" -f $spawnDataImages);
+          if ([string]::IsNullOrEmpty($spawnDataImages)) {
+            $spawnDataImages = $env:SPAWNDATAIMAGES_DEFAULT;
+          }
+          Write-Host ("final value: {0}" -f $spawnDataImages);
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
-          Write-Host ('::set-output name=matrixValues::'+$env:WF_MATRIX_VERSIONS);
+          Write-Host ('::set-output name=matrixValues::' + $spawnDataImages);
 
     outputs:
       matrixValues: ${{ steps.create-vars.outputs.matrixValues }}
