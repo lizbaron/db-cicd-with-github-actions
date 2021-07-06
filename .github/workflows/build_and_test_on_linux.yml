@@ -41,19 +41,20 @@ jobs:
         id: create-vars
         shell: pwsh
         run: |
-          # WF_MATRIX_VERSIONS: ${{ format('{{"data-image":{0} }}',github.event.inputs.spawnDataImages) }}
           $spawnDataImages = '${{ github.event.inputs.spawnDataImages }}';
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
-          Write-Host ("input: {0}" -f $spawnDataImages);
+          Write-Host ("input spawnDataImages: {0}" -f $spawnDataImages);
           if ([string]::IsNullOrEmpty($spawnDataImages)) {
             $spawnDataImages = '${{ env.spawndataimages_default }}';
           }
-          Write-Host ("final value: {0}" -f $spawnDataImages);
+          Write-Host ("final spawnDataImages value: {0}" -f $spawnDataImages);
+          $matrixValues = '{{"data-image":{0} }}' -f $spawnDataImages;
+          Write-Host ("matrixValues value: {0}" -f $matrixValues);
           Write-Host "";
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
 
-          Write-Host ('::set-output name=matrixValues::' + $spawnDataImages);
+          Write-Host ('::set-output name=matrixValues::' + $matrixValues);
 
     outputs:
       matrixValues: ${{ steps.create-vars.outputs.matrixValues }}
@@ -62,7 +63,7 @@ jobs:
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   build-tSQLt:
     name: build tSQLt
-    if: ${{ false }}
+    #if: ${{ false }}
 
     runs-on: windows-latest
 
