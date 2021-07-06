@@ -118,7 +118,7 @@ jobs:
 
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   build-facades:
-    name: test build artifacts
+    name: build facade dacpacs
     needs: [build-tSQLt,set-up-env-vars]
     #if: ${{ always() }}
 
@@ -234,6 +234,19 @@ jobs:
 
 
     steps:
+
+      - name: Checkout self
+        uses: actions/checkout@v2
+        with:
+          path: cicd
+
+      - name: Checkout tSQLt
+        uses: actions/checkout@v2
+        with:
+          repository: tSQLt-org/tSQLt
+          ref: tSQLtFacadeBuild # OH BY THE WAY, #MDP --> order actually matters. If the ref does not appear here, checkout ignores it. No error. Very helpful.
+          path: tSQLt
+          token: ${{ secrets.my_pat }}
 
       - name: download tSQLtBuildArtifact artifact
         uses: actions/download-artifact@v2
