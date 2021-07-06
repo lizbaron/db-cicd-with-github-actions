@@ -47,7 +47,7 @@ jobs:
           Write-Host "";
           Write-Host ("input: {0}" -f $spawnDataImages);
           if ([string]::IsNullOrEmpty($spawnDataImages)) {
-            $spawnDataImages = $env:SPAWNDATAIMAGES_DEFAULT;
+            $spawnDataImages = ${{ env.SPAWNDATAIMAGES_DEFAULT }};
           }
           Write-Host ("final value: {0}" -f $spawnDataImages);
           Write-Host "";
