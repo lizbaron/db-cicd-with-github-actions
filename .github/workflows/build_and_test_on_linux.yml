@@ -15,10 +15,6 @@ on:
         description: 'names of the data-images on spawn (e.g. ["mssql","empty-mssql"]) aka 2017 and 2019'
         required: true
         default: '["mssql","empty-mssql"]' # If you change this, remember to also update env.SPAWNDATAIMAGES_DEFAULT
-      fail-fast:
-        description: 'set to "false" to allow all matrix jobs to run, even if some fail'
-        required: true
-        default: 'true'
 
 env:
   SPAWNDATAIMAGES_DEFAULT: '["mssql","empty-mssql"]'
@@ -132,7 +128,7 @@ jobs:
 
     strategy:
       matrix: ${{ fromJson(needs.set-up-env-vars.outputs.matrixValues) }}
-      fail-fast: ${{ fromJSON(github.event.inputs.fail-fast) }}
+      fail-fast: true
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
     runs-on: windows-latest
@@ -283,8 +279,8 @@ jobs:
       MATRIX_VERSIONS: ${{ format('{{"data-image":{0} }}',github.event.inputs.spawnDataImages) }}
 
     strategy:
-      matrix: ${{ fromJson(needs.set-up-env-vars.outputs.matrixValues) }}
-      fail-fast: ${{ fromJSON(github.event.inputs.fail-fast) }}
+      matrix: ${{ fromJson(github.env.wf_matrix_versions) }}
+      fail-fast: false
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
     runs-on: windows-latest
