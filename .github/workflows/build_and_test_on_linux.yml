@@ -319,6 +319,56 @@ jobs:
           name: tSQLt
           path: "${{ github.workspace }}\\tSQLt\\Build\\output\\tSQLt"
 
+      - name: load namespace variables into env
+        id: create-vars
+        shell: pwsh
+        run: |
+          $sqlcmdPath = (Get-Command sqlcmd).Path.TrimEnd("\\SQLCMD.EXE");
+          Write-Host ('::set-output name=sqlcmdPath::'+$sqlcmdPath);
+
+      - name: Install spawnctl
+        shell: pwsh
+        run: |
+          echo "Downloading and installing spawnctl..."
+          Invoke-WebRequest -Uri "https://run.spawn.cc/spawnctl.exe" -UseBasicParsing -OutFile "${{ github.workspace }}\spawnctl.exe"
+          & "${{ github.workspace }}\spawnctl.exe" version
+
+      - name: Create Container
+        id: create-container
+        shell: pwsh
+        run: |
+          & "${{ github.workspace }}\spawnctl.exe" get data-images
+
+          $dataImageName = "${{ matrix.data-image }}";
+
+          echo "Creating 'tSQLtOnLinux' Spawn data container from image '$dataImageName'";
+          $containerName= & "${{ github.workspace }}\spawnctl.exe" create data-container --image $dataImageName --lifetime 30m -q
+          $containerJSON= & "${{ github.workspace }}\spawnctl.exe" get data-container $containerName -o json
+          $containerInfo = ConvertFrom-JSON -inputObject $containerJSON;
+          $containerFQDN=$containerInfo.host+", "+$containerInfo.port;
+          $containerUser=$containerInfo.user;
+          $containerPassword=$containerInfo.password;
+          echo "Successfully created Spawn data container '$containerName'"
+
+          Write-Host ('::set-output name=containerFQDN::'+$containerFQDN);
+          Write-Host ('::set-output name=containerUser::'+$containerUser);
+          Write-Host ('::set-output name=containerPassword::'+$containerPassword);
+
+        env:
+          SPAWNCTL_ACCESS_TOKEN: ${{ secrets.SPAWNCTL_ACCESS_TOKEN }} 
+
+      - name: print sql version info
+        shell: pwsh
+        run: |
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+          Write-Host "";
+          # Write-Host Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "${{ steps.create-container.outputs.containerFQDN }}" -Username "${{ steps.create-container.outputs.containerUser }}" -Password "${{ steps.create-container.outputs.containerPassword }}" -As DataSet
+          $DS = Invoke-Sqlcmd -ConnectionTimeout 600 -Query "SELECT SUSER_NAME() U,SYSDATETIME() T,@@VERSION V;" -ServerInstance "${{ steps.create-container.outputs.containerFQDN }}" -Username "${{ steps.create-container.outputs.containerUser }}" -Password "${{ steps.create-container.outputs.containerPassword }}" -As DataSet
+
+          $DS.Tables[0].Rows | %{ echo "{ $($_['U']), $($_['T']), $($_['V']) }" }    
+          Write-Host "";
+          Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
+
       # @SM --> TODO: jUnit results
       - name: ant Build/tSQLt.validatebuild.xml
         working-directory: ${{ github.workspace }}\tSQLt\Build
