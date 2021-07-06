@@ -282,7 +282,7 @@ jobs:
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   test-tSQLt-and-facade:
     name: test build artifact
-    needs: [create-artifact]
+    needs: [create-artifact,set-up-env-vars]
     #if: ${{ always() }}
 
     env:
@@ -292,7 +292,7 @@ jobs:
       MATRIX_VERSIONS: ${{ format('{{"data-image":{0} }}',github.event.inputs.spawnDataImages) }}
 
     strategy:
-      matrix: ${{ fromJson(github.env.wf_matrix_versions) }}
+      matrix: ${{ fromJson(needs.set-up-env-vars.outputs.matrixValues) }}
       fail-fast: false
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
