@@ -42,12 +42,12 @@ jobs:
         shell: pwsh
         run: |
           # WF_MATRIX_VERSIONS: ${{ format('{{"data-image":{0} }}',github.event.inputs.spawnDataImages) }}
-          $spawnDataImages = ${{ github.event.inputs.spawnDataImages }};
+          $spawnDataImages = '${{ github.event.inputs.spawnDataImages }}';
           Write-Host "✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ✨   ";
           Write-Host "";
           Write-Host ("input: {0}" -f $spawnDataImages);
           if ([string]::IsNullOrEmpty($spawnDataImages)) {
-            $spawnDataImages = ${{ env.spawndataimages_default }};
+            $spawnDataImages = '${{ env.spawndataimages_default }}';
           }
           Write-Host ("final value: {0}" -f $spawnDataImages);
           Write-Host "";
