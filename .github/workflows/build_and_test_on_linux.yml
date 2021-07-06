@@ -283,7 +283,7 @@ jobs:
       MATRIX_VERSIONS: ${{ format('{{"data-image":{0} }}',github.event.inputs.spawnDataImages) }}
 
     strategy:
-      matrix: ${{ fromJson(github.env.wf_matrix_versions) }}
+      matrix: ${{ fromJson(needs.set-up-env-vars.outputs.matrixValues) }}
       fail-fast: ${{ fromJSON(github.event.inputs.fail-fast) }}
 
     # More types found here, https://docs.github.com/en/free-pro-team@latest/actions/reference/specifications-for-github-hosted-runners
