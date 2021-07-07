@@ -230,11 +230,10 @@ jobs:
     runs-on: windows-latest
 
     env:
-      TSQLT_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\tSQLt
-
+      TSQLT_PUBLIC_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\tSQLt\public
+      TSQLT_VALIDATION_ARTIFACT_DIR: ${{ github.workspace }}\tSQLt\Build\output\tSQLt\validation
 
     steps:
-
       - name: Checkout self
         uses: actions/checkout@v2
         with:
@@ -266,18 +265,25 @@ jobs:
         run: |
           Get-ChildItem . -Recurse
 
-      - name: package tSQLt.zip  --> Build/output/tSQLt/
+      - name: package Build/output/tSQLt /public and /validation files
         shell: pwsh
         working-directory: ${{ github.workspace }}\tSQLt\
         run: |
           .\Build\BuildtSQLtZip.ps1 -ErrorAction Stop
 
-      - name: create tSQLt artifact
+      - name: create tSQLt public artifact
         uses: actions/upload-artifact@v2
         with:
           if-no-files-found: error
-          name: tSQLt
-          path: "${{ env.tsqlt_artifact_dir }}\\"
+          name: tSQLtPublic
+          path: "${{ env.tsqlt_public_artifact_dir }}\\"
+
+      - name: create tSQLt validation artifact
+        uses: actions/upload-artifact@v2
+        with:
+          if-no-files-found: error
+          name: tSQLtValidation
+          path: "${{ env.tsqlt_validation_artifact_dir }}\\"
 
 # 💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖  💖   
   test-tSQLt-and-facade:
@@ -313,11 +319,17 @@ jobs:
           path: tSQLt
           token: ${{ secrets.my_pat }}
 
-      - name: download tSQLt artifact
+      - name: download public tSQLt artifact
         uses: actions/download-artifact@v2
         with:
-          name: tSQLt
-          path: "${{ github.workspace }}\\tSQLt\\Build\\output\\tSQLt"
+          name: tSQLtPublic
+          path: "${{ github.workspace }}\\tSQLt\\Build\\output\\tSQLt\\public"
+
+      - name: download validation tSQLt artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: tSQLtValidation
+          path: "${{ github.workspace }}\\tSQLt\\Build\\output\\tSQLt\\validation"
 
       - name: load namespace variables into env
         id: create-vars
