@@ -99,7 +99,7 @@ jobs:
         run: ant -buildfile "${{ github.workspace }}\tSQLt\Build\tSQLt.buildCLR.xml" -D"msbuild.path"="$env:MSBUILD_HOME" all
  
       - name: ant Build/tSQLt.build.xml --> Build/output/tSQLtBuild
-        run: ant -buildfile "${{ github.workspace }}\tSQLt\Build\tSQLt.build.xml" all
+        run: ant -buildfile "${{ github.workspace }}\tSQLt\Build\tSQLt.build.xml" all -D"commit.id"="${{ github.sha }}"
 
       - name: copy tSQLt artifacts to ${{ env.artifact_dir }}
         shell: pwsh
@@ -390,11 +390,7 @@ jobs:
         shell: pwsh
         run: |
           $ArtifactPath = "$env:TEST_ARTIFACT_DIR\";
-
-          $ArtifactPath;
           (Get-ChildItem $basePath -recurse -include "TestResults*.xml").FullName; 
-
-          Set-Content -Path ($ArtifactPath+"CommitId.txt") -Value "${{ github.sha }}"
 
       - name: archive junit test artifact
         uses: actions/upload-artifact@v2
